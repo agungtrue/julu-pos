@@ -6,10 +6,10 @@
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-julu-tosca: #0F766E;   /* Teal kuat untuk impresi ramah & kokoh */
+  --color-julu-orange: #EF5B2B;  /* Orange resmi Julu (Hex #EF5B2B) */
+  --color-julu-yellow: #F59E0B;  /* Kuning ceria penyeimbang */
+  --color-julu-bg: #FAFAFA;      /* Background bersih hangat (Off-white) */
 }
 
 @media (prefers-color-scheme: dark) {

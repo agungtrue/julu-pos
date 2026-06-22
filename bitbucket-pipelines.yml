@@ -1,0 +1,26 @@
+image: node:20
+
+pipelines:
+  branches:
+    main:
+      - step:
+          name: Build and Push Admin Web (AMD64)
+          services:
+            - docker
+          script:
+            - echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+            
+            - docker build -t $DOCKERHUB_USERNAME/julu_admin:latest .
+            
+            - docker push $DOCKERHUB_USERNAME/julu_admin:latest
+            
+      - step:
+          name: Deployment Web to VPS
+          script:
+            - ssh -p 22 root@HOST_IP "
+                cd /root/julu-stack &&
+                echo '$DOCKERHUB_PASSWORD' | docker login -u '$DOCKERHUB_USERNAME' --password-stdin &&
+                docker compose pull julu-admin &&
+                docker compose up -d --no-deps julu-admin &&
+                docker image prune -f
+              "
