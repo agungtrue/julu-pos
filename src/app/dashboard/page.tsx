@@ -225,7 +225,8 @@ export default function DashboardPage() {
             [&::-webkit-scrollbar-thumb]:rounded-full
             hover:[&::-webkit-scrollbar-thumb]:bg-gray-300"
           >
-            {summary?.bestSellers.map((item: unknown, index: number) => (
+            {/* @ts-ignore */}
+            {summary?.bestSellers.map((item, index) => (
               <div key={item.name} className="space-y-1.5">
                 <div className="flex justify-between items-center text-xs md:text-sm">
                   <div className="flex items-center gap-3">
