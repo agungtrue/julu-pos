@@ -1,5 +1,5 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3006';
-
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.julucoffee.com';
+console.log({ env: process.env.NEXT_PUBLIC_API_URL, baseUrl: BASE_URL })
 export const endpoints = {
   auth: {
     login: `${BASE_URL}/auth/login`,
