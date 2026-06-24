@@ -5,6 +5,10 @@ COPY package.json package-lock.json* ./
 
 RUN npm ci
 
+# ARG
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
 # --- Stage 2: Build Next.js ---
 FROM node:20-alpine AS builder
 WORKDIR /app
