@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { removeAuthCookie } from '@/app/actions/auth';
 
 export default function DashboardLayout({
   children,
@@ -21,11 +22,8 @@ export default function DashboardLayout({
     { name: 'Daftar Menu & Produk', path: '/dashboard/products', icon: '☕' },
   ];
 
-  // Fungsi Taktis Pembersihan Sesi (Logout)
   const handleLogout = () => {
-    // Hapus cookie session julu dengan memundurkan tanggal kadaluarsa
-    document.cookie = 'julu_session_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-    // Tendang kembali ke halaman login luar
+    removeAuthCookie()
     router.push('/login');
   };
 
@@ -106,7 +104,7 @@ export default function DashboardLayout({
               AG
             </div>
             <div>
-              <h4 className="text-xs font-bold text-white tracking-wide">SD Agung</h4>
+              <h4 className="text-xs font-bold text-white tracking-wide">Admin</h4>
               <p className="text-[10px] text-white/60">Owner / Operator</p>
             </div>
           </div>

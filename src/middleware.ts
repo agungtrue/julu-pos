@@ -3,9 +3,10 @@ import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
   const token = request.cookies.get('julu_session_token')?.value;
-  console.log({ token })
   
   const { pathname } = request.nextUrl;
+
+  // console.log({ middleware: token, pathname })
 
   const isProtectedRoute = pathname.startsWith('/dashboard') || pathname === '/';
   const isAuthRoute = pathname === '/login';
@@ -23,13 +24,6 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request path except:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico, images, svg (public files)
-     */
     '/((?!api|_next/static|_next/image|favicon.ico|.*\\.png|.*\\.svg).*)',
   ],
 };

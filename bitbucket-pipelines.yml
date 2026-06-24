@@ -9,9 +9,7 @@ pipelines:
             - docker
           script:
             - echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
-            
-            - docker build -t $DOCKERHUB_USERNAME/julu_admin:latest .
-            
+            - docker build --build-arg NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL -t $DOCKERHUB_USERNAME/julu_admin:latest .
             - docker push $DOCKERHUB_USERNAME/julu_admin:latest
             
       - step:
