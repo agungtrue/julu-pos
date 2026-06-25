@@ -2,9 +2,8 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
+import api from '../../lib/api'
 import { endpoints } from '../../config/enpoints'
-import { getAuthToken } from '@/app/actions/auth';
 import DashboardSkeleton from '@/components/DashboardSkeleton';
 
 export default function DashboardPage() {
@@ -30,12 +29,7 @@ export default function DashboardPage() {
       url = `${url}?startDate=${startDate}&endDate=${endDate}`;
     }
 
-    const token = await getAuthToken();
-    const response = await axios.get(url, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const response = await api.get(url);
     // return response.data;
     return response?.data?.data?.[0];
   };
