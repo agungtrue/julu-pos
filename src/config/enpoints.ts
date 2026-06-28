@@ -18,5 +18,6 @@ export const endpoints = {
     summaryRange: {
       get: (query: string) => `${BASE_URL}/orders/summary?${query}`,
     },
+    getAll: `${BASE_URL}/orders`,
   }
 };
