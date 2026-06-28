@@ -17,18 +17,22 @@ interface TransactionItem {
   name: string;
   qty: number;
   price: number;
-  product: TransactionDetail[]
+  product: TransactionDetail
 }
 
+interface User {
+  name: string
+}
 interface Transaction {
   id: string;
   invoiceNumber: string;
-  timestamp: string;
+  createdAt: string;
   items: TransactionItem[];
   discountAmount: number;
   finalAmount: number;
-  paymentMethod: "qris" | "cash";
-  cashierName: string;
+  user: User,
+  total: number,
+  payment_method: "qris" | "cash";
 }
 
 export default function SalesLogPage() {
@@ -88,7 +92,7 @@ export default function SalesLogPage() {
   };
 
   // Logika Filter Penjualan
-  const transactions = transactionsData.filter((tx) => {
+  const transactions = transactionsData.filter((tx: Transaction) => {
     const summaryText = getItemsSummaryString(tx.items).toLowerCase();
     const matchesSearch =
       String(tx.id).toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -178,7 +182,7 @@ export default function SalesLogPage() {
           Aliran Feed Transaksi (Ketuk untuk Detail)
         </h3>
 
-        {transactions?.map((tx) => (
+        {transactions?.map((tx: Transaction) => (
           <div
             key={tx.id}
             onClick={() => handleOpenDetail(tx)}
