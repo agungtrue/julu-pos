@@ -8,8 +8,12 @@ export const endpoints = {
   ingredients: {
     get: `${BASE_URL}/ingredients`,
     post: `${BASE_URL}/ingredients`,
-    put: (id: string) => `${BASE_URL}/ingredients/${id}`,
+    patch: (id: string) => `${BASE_URL}/ingredients/${id}`,
     delete: (id: string) => `${BASE_URL}/ingredients/${id}`,
+    recipe: {
+        get: (id: string) => `${BASE_URL}/ingredients/recipe/${id}`,
+        post: `${BASE_URL}/ingredients/recipe`,
+    }
   },
   orders: {
     summary: {
@@ -19,5 +23,10 @@ export const endpoints = {
       get: (query: string) => `${BASE_URL}/orders/summary?${query}`,
     },
     getAll: `${BASE_URL}/orders`,
+  },
+  products: {
+    getWithIngredients: `${BASE_URL}/products?withIngredients=true`,
+    get: `${BASE_URL}/products`,
+    post: `${BASE_URL}/products`,
   }
 };
