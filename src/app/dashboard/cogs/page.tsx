@@ -49,6 +49,7 @@ export default function HppSystemPage() {
     menuName: "",
     purchaseCost: 0,
     conversionFactor: 0,
+    unit: "",
     ingredientsBreakdown: [],
   });
 
