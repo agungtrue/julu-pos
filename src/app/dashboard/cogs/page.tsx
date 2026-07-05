@@ -11,16 +11,14 @@ interface Ingredient {
   name: string;
   conversion_factor: number;
   purchase_cost: number;
-  // purchaseSize: number;
   unit: "gram" | "ml" | "pcs";
   cost_per_unit: number;
 }
 
 interface RecipeIngredient {
   id: string;
-  // ingredientName: string;
   ingredient_id: string;
-  ingredient: Ingredient[]
+  ingredient: Ingredient
   qty_used: number;
   unit: string;
   sub_total_cost: number;
@@ -32,6 +30,7 @@ interface RecipeItem {
   price: number;
   purchaseCost: number;
   ingredientsBreakdown: RecipeIngredient[];
+  productIngredients: RecipeIngredient[];
 }
 
 export default function HppSystemPage() {
@@ -72,9 +71,16 @@ export default function HppSystemPage() {
   console.log({ isLoadingIngredients, ingredientsData })
 
 
+  interface SaveIngredientsPayload {
+    name: string;
+    purchase_cost: number;
+    conversion_factor: number;
+    unit: string;
+  }
+
   // post ingredients
   const { mutate: handleSaveIngredients, isPending } = useMutation({
-    mutationFn: async (payload) => {
+    mutationFn: async (payload: SaveIngredientsPayload) => {
       return await api.post(endpoints.ingredients.post, payload);
     },
     onSuccess: () => {
@@ -162,7 +168,7 @@ export default function HppSystemPage() {
   });
 
 
-  const recipes = productsData?.map(data => {
+  const recipes = productsData?.map((data: RecipeItem) => {
     const map = {
       ...data,
       ingredientsBreakdown: data.productIngredients ?? []
@@ -172,9 +178,17 @@ export default function HppSystemPage() {
 
   console.log({ recipes })
 
+  interface SaveRecipePayload {
+    product_id: number;
+    ingredients: {
+      ingredient_id: string;
+      qty_used: number;
+    }[];
+  }
+
   // post ingredients recipe
   const { mutate: handleSaveRecipe } = useMutation({
-    mutationFn: async (payload) => {
+    mutationFn: async (payload: SaveRecipePayload) => {
       console.log({ handleSaveRecipe_payload: payload })
       return await api.post(endpoints.ingredients.recipe.post, payload);
     },
@@ -290,7 +304,7 @@ export default function HppSystemPage() {
   const handleQtyChange = (ingredientId: string, newQty: number) => {
     if (!editingRecipe) return;
 
-    const targetIngredient = ingredients.find((i) => i.id === ingredientId);
+    const targetIngredient = ingredients.find((i: Ingredient) => i.id === ingredientId);
     const costPerUnit = targetIngredient ? targetIngredient.cost_per_unit : 0;
     console.log({ targetIngredient, costPerUnit, newQty })
 
@@ -345,7 +359,7 @@ export default function HppSystemPage() {
 
       console.log({selectedNewIngredientId})
 
-      const targetMaster = ingredientsData.find((m) => m.id === selectedNewIngredientId);
+      const targetMaster = ingredientsData.find((m: Ingredient) => m.id === selectedNewIngredientId);
       console.log({ targetMaster, editingRecipe })
       if (!targetMaster) return;
 
@@ -439,7 +453,7 @@ export default function HppSystemPage() {
             ➕ Bahan Baku Baru
           </button>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {ingredients.map((ing) => (
+            {ingredients.map((ing: Ingredient) => (
               <div
                 key={ing.id}
                 className="bg-white border border-gray-100 rounded-3xl p-5 shadow-sm"
@@ -486,7 +500,7 @@ export default function HppSystemPage() {
             ➕ Racik Resep Baru
             </button> */}
           <div className="space-y-6">
-            {recipes.map((recipe) => {
+            {recipes.map((recipe: RecipeItem) => {
               const totalHpp = getRecipeTotalHpp(recipe.ingredientsBreakdown);
               const grossProfit = recipe.price - totalHpp;
               const marginPercentage = (
@@ -558,7 +572,7 @@ export default function HppSystemPage() {
                           {item.ingredient?.name}
                         </span>
                         <span className="font-mono font-bold text-gray-400">
-                          {item.qtyUsed} {item.ingredient?.unit}{" "}
+                          {item.qty_used} {item.ingredient?.unit}{" "}
                           {/* {item?.qty_used || 0} gram/ml/pcs */}
                           <span className="text-gray-700 ml-2">
                             ({formatIDR(item.sub_total_cost || 0)})
@@ -629,8 +643,8 @@ export default function HppSystemPage() {
                     
                     {/* Filter: Hanya tampilkan bahan yang BELUM dimasukkan ke resep */}
                     {ingredientsData
-                      ?.filter(master => !editingRecipe?.ingredientsBreakdown.some(item => item.ingredient_id === master.id))
-                      .map((master) => (
+                      ?.filter((master: Ingredient) => !editingRecipe?.ingredientsBreakdown.some(item => item.ingredient_id === master.id))
+                      .map((master: Ingredient) => (
                         <option key={master.id} value={master.id}>
                           {master.name} ({master.unit})
                         </option>
