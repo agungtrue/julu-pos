@@ -65,7 +65,7 @@ export default function ProductsPage() {
   };
 
   // Logika Pemfilteran Data Produk Dinamis
-  const filteredProducts = products?.filter((p) => {
+  const filteredProducts = products?.filter((p: Product) => {
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || p.type === selectedCategory;
     return matchesSearch && matchesCategory;
@@ -73,8 +73,17 @@ export default function ProductsPage() {
 
   const queryClient = useQueryClient();
 
+  interface SaveNewProduct {
+    name: string;
+    price: number;
+    type: string;
+    size: string;
+    cogs: number,
+    isActive: boolean,
+  }
+
   const { mutate: postNewProduct, isPending } = useMutation({
-    mutationFn: async (payload) => {
+    mutationFn: async (payload: SaveNewProduct) => {
       console.log({ payload })
       return await api.post(endpoints.products.post, payload);
     },
@@ -154,7 +163,7 @@ export default function ProductsPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredProducts.map((product) => {
+        {filteredProducts.map((product: Product) => {
           // const marginPercentage = calculateMargin(product.price, product.hpp);
           const marginPercentage = 0
 
@@ -166,7 +175,7 @@ export default function ProductsPage() {
             >
               <div className="flex justify-between items-center mb-4">
                 <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-md ${
-                  product.type === 'coffee' ? 'bg-[#0F766E]/10 text-[#0F766E]' : product.category === 'non_coffee' ? 'bg-amber-500/10 text-amber-600' : 'bg-[#EF5B2B]/10 text-[#EF5B2B]'
+                  product.type === 'coffee' ? 'bg-[#0F766E]/10 text-[#0F766E]' : product.type === 'non_coffee' ? 'bg-amber-500/10 text-amber-600' : 'bg-[#EF5B2B]/10 text-[#EF5B2B]'
                 }`}>
                   {product.type}
                 </span>
