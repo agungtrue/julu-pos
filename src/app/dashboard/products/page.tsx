@@ -189,7 +189,7 @@ export default function ProductsPage() {
 
               <div className="space-y-1 mb-5">
                 <h3 className="font-bold text-base text-gray-800 tracking-tight group-hover:text-[#0F766E] transition-colors">
-                  {product.name}
+                  {product.name} {product.size}
                 </h3>
                 <div className="text-xs text-gray-400 font-medium font-mono">
                   {/* Terjual Periode Ini: <span className="text-gray-700 font-bold">{product.salesCount} porsi</span> */}
