@@ -7,30 +7,77 @@ import { endpoints } from '../../config/enpoints'
 import DashboardSkeleton from '@/components/DashboardSkeleton';
 
 export default function DashboardPage() {
-  const [timeFilter, setTimeFilter] = useState<'today' | 'month'>('today');
+  const [timeFilter, setTimeFilter] = useState<'today' | 'month' | 'yesterday' | 'last_month'>('today');
 
   const getDateParamsForThisMonth = () => {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, '0');
-  const day = String(today.getDate()).padStart(2, '0');
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
 
-  return {
-    startDate: `${year}-${month}-01`,
-    endDate: `${year}-${month}-${day}`,
+    return {
+        startDate: `${year}-${month}-01`,
+        endDate: `${year}-${month}-${day}`,
+    };
   };
-};
 
-  const fetchSummaryData = async (filter: 'today' | 'month') => {
+  const getDateParamsForYesterday = () => {
+    const today = new Date();
+    const yesterday = new Date(today);
+    
+    // Kurangi 1 hari dari hari ini
+    yesterday.setDate(today.getDate() - 1);
+
+    const year = yesterday.getFullYear();
+    const month = String(yesterday.getMonth() + 1).padStart(2, '0');
+    const day = String(yesterday.getDate()).padStart(2, '0');
+
+    const formattedDate = `${year}-${month}-${day}`;
+
+    // Karena hanya 1 hari, startDate dan endDate nilainya sama
+    return {
+        startDate: formattedDate,
+        endDate: formattedDate,
+    };
+  };
+
+  const getDateParamsForLastMonth = () => {
+    const today = new Date();
+    
+    // Trik JS: month - 1 otomatis mundur ke tahun sebelumnya jika sekarang Januari
+    const firstDay = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+    // Trik JS: tanggal 0 otomatis memberikan tanggal terakhir dari bulan sebelumnya
+    const lastDay = new Date(today.getFullYear(), today.getMonth(), 0);
+
+    const startYear = firstDay.getFullYear();
+    const startMonth = String(firstDay.getMonth() + 1).padStart(2, '0');
+    const startDay = String(firstDay.getDate()).padStart(2, '0');
+
+    const endYear = lastDay.getFullYear();
+    const endMonth = String(lastDay.getMonth() + 1).padStart(2, '0');
+    const endDay = String(lastDay.getDate()).padStart(2, '0');
+
+    return {
+        startDate: `${startYear}-${startMonth}-${startDay}`,
+        endDate: `${endYear}-${endMonth}-${endDay}`,
+    };
+  };
+
+  const fetchSummaryData = async (filter: 'today' | 'month' | 'yesterday' | 'last_month') => {
     let url = endpoints.orders.summary.get;
 
     if (filter === 'month') {
       const { startDate, endDate } = getDateParamsForThisMonth();
       url = `${url}?startDate=${startDate}&endDate=${endDate}`;
+    } else if (filter === 'yesterday') {
+      const { startDate, endDate } = getDateParamsForYesterday();
+      url = `${url}?startDate=${startDate}&endDate=${endDate}`;
+    } else if (filter === 'last_month') {
+      const { startDate, endDate } = getDateParamsForLastMonth();
+      url = `${url}?startDate=${startDate}&endDate=${endDate}`;
     }
 
     const response = await api.get(url);
-    // return response.data;
     return response?.data?.data?.[0];
   };
 
@@ -76,6 +123,16 @@ export default function DashboardPage() {
             Today
           </button>
           <button
+            onClick={() => setTimeFilter('yesterday')}
+            className={`px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 ${
+              timeFilter === 'yesterday'
+                ? 'bg-white text-teal-700 shadow-sm'
+                : 'text-gray-500 hover:text-gray-800'
+            }`}
+          >
+            Yesterday
+          </button>
+          <button
             onClick={() => setTimeFilter('month')}
             className={`px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 ${
               timeFilter === 'month'
@@ -84,6 +141,16 @@ export default function DashboardPage() {
             }`}
           >
             This Month
+          </button>
+          <button
+            onClick={() => setTimeFilter('last_month')}
+            className={`px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 ${
+              timeFilter === 'last_month'
+                ? 'bg-white text-teal-700 shadow-sm'
+                : 'text-gray-500 hover:text-gray-800'
+            }`}
+          >
+            Last Month
           </button>
         </div>
 

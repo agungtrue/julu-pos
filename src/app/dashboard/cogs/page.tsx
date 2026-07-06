@@ -85,59 +85,13 @@ export default function HppSystemPage() {
     },
     onSuccess: () => {
       setIsAddBahanBakuModalOpen(false)
-      // 🔴 Kunci otomatisasi: samakan queryKey ini dengan queryKey yang ada di list data Anda
-      queryClient.invalidateQueries({ queryKey: ['ingredientsData'] });
+      setIsSaving(false);
 
-      // Opsional: reset form, tutup modal, atau kasih toast/notifikasi sukses
+      queryClient.invalidateQueries({ queryKey: ['ingredientsData'] });
     },
   });
 
   const ingredients = ingredientsData
-
-  // 1. State Bahan Baku Grosir Julu Coffee
-  // const [ingredients] = useState<Ingredient[]>([
-  //   {
-  //     id: "b1",
-  //     name: "Biji Kopi ELO Blend (KG)",
-  //     purchasePrice: 150000,
-  //     purchaseSize: 1000,
-  //     unit: "gram",
-  //     costPerUnit: 150,
-  //   },
-  //   {
-  //     id: "b2",
-  //     name: "Susu Pasteurization Premium (L)",
-  //     purchasePrice: 19000,
-  //     purchaseSize: 1000,
-  //     unit: "ml",
-  //     costPerUnit: 19,
-  //   },
-  //   {
-  //     id: "b3",
-  //     name: "Sirup Gula Aren Cair (L)",
-  //     purchasePrice: 25000,
-  //     purchaseSize: 1000,
-  //     unit: "ml",
-  //     costPerUnit: 25,
-  //   },
-  //   {
-  //     id: "b4",
-  //     name: "Cup Julu 16oz + Lid",
-  //     purchasePrice: 800,
-  //     purchaseSize: 1,
-  //     unit: "pcs",
-  //     costPerUnit: 800,
-  //   },
-  //   {
-  //     id: "b5",
-  //     name: "Ice Cream Vanilla Bucket",
-  //     purchasePrice: 35000,
-  //     purchaseSize: 700,
-  //     unit: "gram",
-  //     costPerUnit: 50,
-  //   },
-  // ]);
-
 
   // get recipe
   // const fetchRecipesData = async () => {
@@ -193,7 +147,6 @@ export default function HppSystemPage() {
       return await api.post(endpoints.ingredients.recipe.post, payload);
     },
     onSuccess: () => {
-      // setIsAddBahanBakuModalOpen(false)
       queryClient.invalidateQueries({ queryKey: ['productsData'] });
 
       // Tutup modal dengan sukses
@@ -202,76 +155,6 @@ export default function HppSystemPage() {
       setIsSaving(false);
     },
   });
-
-  // 2. State Master Resep yang bisa dimutasi secara lokal setelah hit API sukses
-  // const recipes = recipesData
-  // const [recipes, setRecipes] = useState<RecipeItem[]>([
-  //   {
-  //     id: "r1",
-  //     menuName: "Palm Sugar Latte Iced regular",
-  //     purchaseCost: 18000,
-  //     sellingPrice: 0,
-  //     ingredientsBreakdown: [
-  //       {
-  //         ingredientId: "b1",
-  //         ingredientName: "Biji Kopi ELO Blend (KG)",
-  //         qtyUsed: 15,
-  //         unit: "gram",
-  //         subTotalCost: 2250,
-  //       },
-  //       {
-  //         ingredientId: "b2",
-  //         ingredientName: "Susu Pasteurization Premium (L)",
-  //         qtyUsed: 120,
-  //         unit: "ml",
-  //         subTotalCost: 2280,
-  //       },
-  //       {
-  //         ingredientId: "b3",
-  //         ingredientName: "Sirup Gula Aren Cair (L)",
-  //         qtyUsed: 30,
-  //         unit: "ml",
-  //         subTotalCost: 750,
-  //       },
-  //       {
-  //         ingredientId: "b4",
-  //         ingredientName: "Cup Julu 16oz + Lid",
-  //         qtyUsed: 1,
-  //         unit: "pcs",
-  //         subTotalCost: 800,
-  //       },
-  //     ],
-  //   },
-  //   {
-  //     id: "r2",
-  //     menuName: "Ice Cream Based regular",
-  //     purchaseCost: 15000,
-  //     sellingPrice: 0,
-  //     ingredientsBreakdown: [
-  //       {
-  //         ingredientId: "b5",
-  //         ingredientName: "Ice Cream Vanilla Bucket",
-  //         qtyUsed: 80,
-  //         unit: "gram",
-  //         subTotalCost: 4000,
-  //       },
-  //       {
-  //         ingredientId: "b2",
-  //         ingredientName: "Susu Pasteurization Premium (L)",
-  //         qtyUsed: 20,
-  //         unit: "ml",
-  //         subTotalCost: 380,
-  //       },
-  //       {
-  //         ingredientId: "b4",
-  //         ingredientName: "Cup Julu 16oz + Lid",
-  //         qtyUsed: 1,
-  //         unit: "pcs",
-  //         subTotalCost: 800,
-  //       },
-  //     ],
-  //   },
-  // ]);
 
   // STATE MANAGEMENT UNTUK FORM EDIT FORMULA RESEP
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -386,7 +269,6 @@ export default function HppSystemPage() {
     setIsAddBahanBakuModalOpen(true);
   };
 
-  // Simpan Resep Baru (Hit POST API Simulation)
   const handleSaveNewRecipe = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
