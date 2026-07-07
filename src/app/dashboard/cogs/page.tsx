@@ -5,6 +5,7 @@ import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { endpoints } from "../../../config/enpoints";
 import api from "../../../lib/api";
 import DashboardSkeleton from "@/components/DashboardSkeleton";
+import { Package, CalculatorIcon, Edit, Plus, Save } from 'lucide-react';
 
 interface Ingredient {
   id: string;
@@ -336,23 +337,25 @@ export default function HppSystemPage() {
       <div className="flex bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm w-full max-w-md font-medium">
         <button
           onClick={() => setActiveTab("ingredients")}
-          className={`flex-1 py-3 text-center rounded-xl text-xs uppercase tracking-wider font-bold transition-all ${
+          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs uppercase tracking-wider font-bold whitespace-nowrap transition-all ${
             activeTab === "ingredients"
               ? "bg-[#0F766E] text-white shadow-sm"
               : "text-gray-500 hover:text-gray-700"
           }`}
         >
-          📦 1. Bahan Baku ({ingredients.length})
+          <Package className="w-4 h-4 stroke-[2.5]" />
+          <span>Bahan Baku ({ingredients.length})</span>
         </button>
         <button
           onClick={() => setActiveTab("recipes")}
-          className={`flex-1 py-3 text-center rounded-xl text-xs uppercase tracking-wider font-bold transition-all ${
+          className={`flex-1 flex items-center justify-center gap-2 py-3 text-center rounded-xl text-xs uppercase tracking-wider font-bold transition-all ${
             activeTab === "recipes"
               ? "bg-[#0F766E] text-white shadow-sm"
               : "text-gray-500 hover:text-gray-700"
           }`}
         >
-          🧪 2. Formula Resep ({recipes.length})
+          <CalculatorIcon className="w-4 h-4 stroke-[2.5]" />
+          <span>Formula Resep ({recipes.length})</span>
         </button>
       </div>
 
@@ -361,9 +364,10 @@ export default function HppSystemPage() {
         <>
           <button
             onClick={(handleOpenAddBahanBakuModalOpen)}
-            className="text-xs font-black text-[#EF5B2B] bg-[#EF5B2B]/5 px-3 py-1.5 rounded-xl hover:bg-[#EF5B2B]/10 transition-colors"
+            className="lex-1 flex gap-2 text-xs font-black text-[#EF5B2B] bg-[#EF5B2B]/5 px-3 py-1.5 rounded-xl hover:bg-[#EF5B2B]/10 transition-colors"
           >
-            ➕ Bahan Baku Baru
+            <Plus className="w-4 h-4 stroke-[2.5]" />
+            Bahan Baku Baru
           </button>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {ingredients.map((ing: Ingredient) => (
@@ -403,8 +407,9 @@ export default function HppSystemPage() {
                       setIsEditBahanBakuModalOpen(true)
                       setEditIngredient({ ...editIngredient, ...ing })
                     }}
-                    className="col-span-1 border border-gray-200 text-gray-500 font-bold py-3 rounded-xl text-xs uppercase tracking-wider"
+                    className="flex flex-1 gap-2 justify-center items-center col-span-1 border border-gray-200 text-gray-500 font-bold py-3 rounded-xl text-xs uppercase tracking-wider"
                   >
+                    <Edit className="w-4 h-4" />
                     Edit
                   </button>
                   {/* <button
@@ -483,10 +488,11 @@ export default function HppSystemPage() {
                       {/* TOMBOL EDIT TAKARAN */}
                       <button
                         onClick={() => handleOpenEditModal(recipe)}
-                        className="bg-gray-50 hover:bg-[#0F766E] text-gray-600 hover:text-white font-bold p-2.5 rounded-xl text-xs transition-colors border border-gray-100 active:scale-95"
+                        className="flex flex-1 justify-center items-center gap-2 bg-gray-50 hover:bg-[#0F766E] text-gray-600 hover:text-white font-bold p-2.5 rounded-xl text-xs transition-colors border border-gray-100 active:scale-95"
                         title="Adjust Takaran Resep"
                       >
-                        ✏️ Adjust Formula
+                        <Edit className="h-4 w-4" />
+                        Adjust Formula
                       </button>
                       {/* <button
                         onClick={() => handleOpenEditModal(product)}
@@ -692,7 +698,12 @@ export default function HppSystemPage() {
                 {isSaving ? (
                   <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
                 ) : (
-                  "💾 Simpan & Update COGS"
+                  <span className="flex flex-1 gap-2 justify-center items-center">
+                    <Save className="w-4 h-4" />
+                    Simpan & Update COGS
+                  </span>
+                  // Simpan
+                  // "Simpan & Update COGS"
                 )}
               </button>
             </div>

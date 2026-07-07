@@ -244,18 +244,18 @@ export default function DashboardPage() {
             {/* CUPS INFO */}
             <div className="bg-gray-50/60 border border-gray-100 p-4 rounded-2xl">
               <div className="flex justify-between items-center mb-3">
-                <span className="text-sm font-bold text-gray-700">🥤 Total Minuman</span>
+                <span className="text-sm font-bold text-gray-700">Total Minuman</span>
                 <span className="text-sm font-black text-[#0F766E] font-mono">{summary?.cups.total} Cups</span>
               </div>
               <div className="grid grid-cols-2 gap-2 text-xs text-gray-500 pt-2 border-t border-gray-200/60 font-medium">
-                <div>☕ Kopi: <span className="text-gray-800 font-bold">{summary?.cups.coffee}</span></div>
-                <div>🍦 Non-Kopi: <span className="text-gray-800 font-bold">{summary?.cups.nonCoffee}</span></div>
+                <div>Kopi: <span className="text-gray-800 font-bold">{summary?.cups.coffee}</span></div>
+                <div>Non-Kopi: <span className="text-gray-800 font-bold">{summary?.cups.nonCoffee}</span></div>
               </div>
             </div>
 
             {/* SNACKS INFO */}
             <div className="bg-gray-50/60 border border-gray-100 p-4 rounded-2xl flex justify-between items-center">
-              <span className="text-sm font-bold text-gray-700">🍟 Cemilan / Snacks</span>
+              <span className="text-sm font-bold text-gray-700">Cemilan / Snacks</span>
               <span className="text-sm font-black text-[#EF5B2B] font-mono">{summary?.snacks} Porsi</span>
             </div>
 

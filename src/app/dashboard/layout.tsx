@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { removeAuthCookie } from '@/app/actions/auth';
+import { Home, CircleDollarSign, TrendingUp, Calculator, SquarePen, Search, Coffee, LogOut } from 'lucide-react';
 
 export default function DashboardLayout({
   children,
@@ -16,10 +17,10 @@ export default function DashboardLayout({
 
   // Daftar Menu Navigasi Portal Julu
   const menuItems = [
-    { name: 'Ringkasan Performa', path: '/dashboard', icon: '📊' },
-    { name: 'Sales', path: '/dashboard/sales', icon: '🧾' },
-    { name: 'Sistem HPP / COGS', path: '/dashboard/cogs', icon: '⚖️' },
-    { name: 'Daftar Menu & Produk', path: '/dashboard/products', icon: '☕' },
+    { name: 'Ringkasan Performa', path: '/dashboard', icon: Home },
+    { name: 'Sales', path: '/dashboard/sales', icon: CircleDollarSign },
+    { name: 'Sistem HPP / COGS', path: '/dashboard/cogs', icon: Calculator },
+    { name: 'Daftar Menu & Produk', path: '/dashboard/products', icon: Coffee },
   ];
 
   const handleLogout = () => {
@@ -76,6 +77,7 @@ export default function DashboardLayout({
           <nav className="space-y-2">
             {menuItems.map((item) => {
               const isActive = pathname === item.path;
+              const Icon = item.icon
               return (
                 <Link
                   key={item.path}
@@ -89,7 +91,8 @@ export default function DashboardLayout({
                     }
                   `}
                 >
-                  <span className="text-lg">{item.icon}</span>
+                  {/* <span className="text-lg">{item.icon}</span> */}
+                  <Icon className="w-4 h-4" />
                   {item.name}
                 </Link>
               );
@@ -113,7 +116,8 @@ export default function DashboardLayout({
             onClick={handleLogout}
             className="w-full bg-white/10 hover:bg-red-600/20 hover:text-red-300 border border-transparent hover:border-red-500/20 text-white/80 font-bold py-3 px-4 rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2"
           >
-            🚪 Keluar Portal
+            <LogOut className="w-4 h-4" />
+            Logout
           </button>
         </div>
       </aside>

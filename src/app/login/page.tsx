@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { endpoints } from '../../config/enpoints';
 import axios from 'axios';
 import { setAuthCookie } from '@/app/actions/auth';
+import { LogIn } from 'lucide-react';
 
 export default function JuluLoginPage() {
   const router = useRouter();
@@ -106,7 +107,10 @@ export default function JuluLoginPage() {
             {isLoading ? (
               <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
             ) : (
-              'Masuk ke Dashboard ➔'
+              <span className="flex flex-1 gap-2 justify-center items-center">
+                LOGIN
+                <LogIn className="w-4 h-4" />
+            </span>
             )}
           </button>
 

@@ -6,6 +6,7 @@ import api from '../../../lib/api'
 import { formatJuluDate } from '../../../lib/utils'
 import { endpoints } from '../../../config/enpoints'
 import DashboardSkeleton from '@/components/DashboardSkeleton';
+import { Search } from 'lucide-react';
 
 
 interface TransactionDetail {
@@ -63,9 +64,6 @@ export default function SalesLogPage() {
   });
 
   if (isLoading) return <DashboardSkeleton/>
-
-  console.log({ transactionsData })
-
   // return <DashboardSkeleton/>
 
   const formatIDR = (num: number) => {
@@ -101,8 +99,6 @@ export default function SalesLogPage() {
       filterMethod === "ALL" || tx.payment_method === filterMethod;
     return matchesSearch && matchesMethod;
   });
-
-  console.log({ selectedTx })
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
@@ -155,7 +151,7 @@ export default function SalesLogPage() {
       <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
         <div className="relative flex-1">
           <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400">
-            🔍
+            <Search className="w-4 h-4"/>
           </span>
           <input
             type="text"
@@ -172,7 +168,7 @@ export default function SalesLogPage() {
               onClick={() => setFilterMethod(method)}
               className={`px-4 py-2 rounded-lg transition-all ${filterMethod === method ? "bg-white text-gray-800 shadow-sm" : "text-gray-400 hover:text-gray-600"}`}
             >
-              {method === "ALL" ? "🌐 Semua" : method}
+              {method === "ALL" ? "Semua" : method}
             </button>
           ))}
         </div>
