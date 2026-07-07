@@ -11,7 +11,7 @@ interface Ingredient {
   name: string;
   conversion_factor: number;
   purchase_cost: number;
-  unit: "gram" | "ml" | "pcs";
+  unit: "GRAM" | "ML" | "PCS";
   cost_per_unit: number;
 }
 
@@ -28,26 +28,42 @@ interface RecipeItem {
   id: number;
   name: string;
   price: number;
-  purchaseCost: number;
+  purchase_cost: number;
   ingredientsBreakdown: RecipeIngredient[];
   productIngredients: RecipeIngredient[];
 }
 
 export default function HppSystemPage() {
   const [activeTab, setActiveTab] = useState<"ingredients" | "recipes">(
-    "recipes",
+    "ingredients",
   ); // Default ke resep agar langsung uji coba edit
   // STATE BARU UNTUK RACIK RESEP
   const [newRecipe, setNewRecipe] = useState<{
-    menuName: string;
-    purchaseCost: number;
-    conversionFactor: number;
+    name: string;
+    purchase_cost: number;
+    conversion_factor: number;
     unit: string;
     ingredientsBreakdown: RecipeIngredient[];
   }>({
-    menuName: "",
-    purchaseCost: 0,
-    conversionFactor: 0,
+    name: "",
+    purchase_cost: 0,
+    conversion_factor: 0,
+    unit: "",
+    ingredientsBreakdown: [],
+  });
+
+  const [editIngredient, setEditIngredient] = useState<{
+    id: string;
+    name: string;
+    purchase_cost: number;
+    conversion_factor: number;
+    unit: string;
+    ingredientsBreakdown: RecipeIngredient[];
+  }>({
+    id: "",
+    name: "",
+    purchase_cost: 0,
+    conversion_factor: 0,
     unit: "",
     ingredientsBreakdown: [],
   });
@@ -57,9 +73,8 @@ export default function HppSystemPage() {
   // get ingredients
   const fetchIngredientsData = async () => {
     const url = endpoints.ingredients.get;
-
     const response = await api.get(url);
-    // return response.data;
+
     return response?.data?.data?.[0];
   };
 
@@ -70,8 +85,15 @@ export default function HppSystemPage() {
 
   console.log({ isLoadingIngredients, ingredientsData })
 
-
   interface SaveIngredientsPayload {
+    name: string;
+    purchase_cost: number;
+    conversion_factor: number;
+    unit: string;
+  }
+
+  interface UpdateIngredientsPayload {
+    id: string;
     name: string;
     purchase_cost: number;
     conversion_factor: number;
@@ -91,22 +113,21 @@ export default function HppSystemPage() {
     },
   });
 
+  // patch ingredients
+  const { mutate: patchIngredients } = useMutation({
+    mutationFn: async (payload: UpdateIngredientsPayload) => {
+      return await api.patch(endpoints.ingredients.patch(payload.id), payload);
+    },
+    onSuccess: () => {
+      setIsEditBahanBakuModalOpen(false)
+      setIsSaving(false);
+
+      queryClient.invalidateQueries({ queryKey: ['ingredientsData'] });
+      queryClient.invalidateQueries({ queryKey: ['productsData'] });
+    },
+  });
+
   const ingredients = ingredientsData
-
-  // get recipe
-  // const fetchRecipesData = async () => {
-  //   const url = endpoints.ingredients.recipe.get;
-
-  //   const response = await api.get(url);
-  //   // return response.data;
-  //   return response?.data?.data?.[0];
-  // };
-
-  // const { data: recipesData, isLoading: isLoadingRecipes } = useQuery({
-  //   queryKey: ['recipesData'],
-  //   queryFn: fetchRecipesData,
-  // });
-
 
   // get products
   const fetchProductsData = async () => {
@@ -143,7 +164,6 @@ export default function HppSystemPage() {
   // post ingredients recipe
   const { mutate: handleSaveRecipe } = useMutation({
     mutationFn: async (payload: SaveRecipePayload) => {
-      console.log({ handleSaveRecipe_payload: payload })
       return await api.post(endpoints.ingredients.recipe.post, payload);
     },
     onSuccess: () => {
@@ -160,6 +180,7 @@ export default function HppSystemPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   // const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isAddBahanBakuModalOpen, setIsAddBahanBakuModalOpen] = useState(false);
+  const [isEditBahanBakuModalOpen, setIsEditBahanBakuModalOpen] = useState(false);
   const [editingRecipe, setEditingRecipe] = useState<RecipeItem | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [selectedNewIngredientId, setSelectedNewIngredientId] = useState('');
@@ -178,7 +199,6 @@ export default function HppSystemPage() {
 
   // Pemicu Pembukaan Modal Edit Formula
   const handleOpenEditModal = (recipe: RecipeItem) => {
-    console.log({ handleOpenEditModalrecipe: recipe })
     setEditingRecipe(JSON.parse(JSON.stringify(recipe)));
     setIsModalOpen(true);
   };
@@ -189,8 +209,6 @@ export default function HppSystemPage() {
 
     const targetIngredient = ingredients.find((i: Ingredient) => i.id === ingredientId);
     const costPerUnit = targetIngredient ? targetIngredient.cost_per_unit : 0;
-    console.log({ targetIngredient, costPerUnit, newQty })
-
 
     const updatedBreakdown = editingRecipe?.ingredientsBreakdown.map((item) => {
       if (item.ingredient?.id === ingredientId) {
@@ -204,7 +222,7 @@ export default function HppSystemPage() {
       return item;
     });
 
-    console.log({ updatedBreakdown })
+    console.log({ handleQtyChange_updatedBreakdown: updatedBreakdown })
 
     setEditingRecipe({
       ...editingRecipe,
@@ -240,10 +258,10 @@ export default function HppSystemPage() {
       e.preventDefault();
       if (!editingRecipe) return;
 
-      console.log({selectedNewIngredientId})
+      // console.log({selectedNewIngredientId})
 
       const targetMaster = ingredientsData.find((m: Ingredient) => m.id === selectedNewIngredientId);
-      console.log({ targetMaster, editingRecipe })
+      // console.log({ targetMaster, editingRecipe })
       if (!targetMaster) return;
 
       const newIngredientRow = {
@@ -277,10 +295,23 @@ export default function HppSystemPage() {
 
     // RENAME newRecipe as ingredients
     handleSaveIngredients({
-      name: newRecipe.menuName,
-      purchase_cost: newRecipe.purchaseCost,
-      conversion_factor: newRecipe.conversionFactor,
+      name: newRecipe.name,
+      purchase_cost: newRecipe.purchase_cost,
+      conversion_factor: newRecipe.conversion_factor,
       unit: newRecipe.unit
+    });
+  };
+
+  const handleEditIngredients = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+
+    patchIngredients({
+      id: editIngredient.id,
+      name: editIngredient.name,
+      purchase_cost: editIngredient.purchase_cost,
+      conversion_factor: editIngredient.conversion_factor,
+      unit: editIngredient.unit
     });
   };
 
@@ -329,7 +360,7 @@ export default function HppSystemPage() {
       {activeTab === "ingredients" && (
         <>
           <button
-            onClick={handleOpenAddBahanBakuModalOpen}
+            onClick={(handleOpenAddBahanBakuModalOpen)}
             className="text-xs font-black text-[#EF5B2B] bg-[#EF5B2B]/5 px-3 py-1.5 rounded-xl hover:bg-[#EF5B2B]/10 transition-colors"
           >
             ➕ Bahan Baku Baru
@@ -360,11 +391,33 @@ export default function HppSystemPage() {
                 <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
                   <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400">
                     Cost Per {ing.unit}:
-                    {/* Cost Per gram/ml/pcs */}
                   </span>
                   <span className="text-sm font-black text-[#EF5B2B] font-mono bg-[#EF5B2B]/5 px-2.5 py-1 rounded-xl">
                     {formatIDR(ing.cost_per_unit)}
                   </span>
+                </div>
+                <div className="grid grid-cols-3 gap-3 pt-4 border-t border-gray-100">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsEditBahanBakuModalOpen(true)
+                      setEditIngredient({ ...editIngredient, ...ing })
+                    }}
+                    className="col-span-1 border border-gray-200 text-gray-500 font-bold py-3 rounded-xl text-xs uppercase tracking-wider"
+                  >
+                    Edit
+                  </button>
+                  {/* <button
+                    type="submit"
+                    disabled={isSaving}
+                    className="col-span-2 bg-[#EF5B2B] text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wider shadow-lg shadow-[#EF5B2B]/10 hover:bg-opacity-95 flex items-center justify-center gap-2"
+                  >
+                    {isSaving ? (
+                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                    ) : (
+                      "Submit"
+                    )}
+                  </button> */}
                 </div>
               </div>
             ))}
@@ -647,164 +700,6 @@ export default function HppSystemPage() {
         </div>
       )}
 
-      {/* 📱 INTERACTIVE SLIDE-UP MODAL: RACIK RESEP BARU */}
-      {/* {isAddModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center z-50 p-0 md:p-4 animate-in fade-in duration-200">
-          <div
-            className="absolute inset-0 -z-10"
-            onClick={() => {
-              if (!isSaving) setIsAddModalOpen(false);
-            }}
-          />
-
-          <form
-            onSubmit={handleSaveNewRecipe}
-            className="bg-white w-full max-w-xl rounded-t-[2.5rem] md:rounded-[2rem] p-6 md:p-8 shadow-2xl flex flex-col max-h-[90vh] border border-gray-100"
-          >
-            <div className="flex justify-between items-start border-b border-gray-100 pb-4 mb-5">
-              <div>
-                <span className="text-[10px] bg-[#0F766E]/10 text-[#0F766E] font-black tracking-widest uppercase px-2.5 py-1 rounded-md">
-                  Menu Baru
-                </span>
-                <h3 className="font-black text-gray-800 text-lg tracking-tight mt-2">
-                  Formulasi Formula Resep
-                </h3>
-              </div>
-              <button
-                type="button"
-                disabled={isSaving}
-                onClick={() => setIsAddModalOpen(false)}
-                className="text-gray-400 font-mono text-lg"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1.5">
-                  Nama Menu
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ex: Ice Aren Latte Large"
-                  value={newRecipe.menuName}
-                  onChange={(e) =>
-                    setNewRecipe({ ...newRecipe, menuName: e.target.value })
-                  }
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#0F766E] font-semibold text-gray-800"
-                />
-              </div>
-              <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1.5">
-                  Harga Jual (Rp)
-                </label>
-                <input
-                  type="number"
-                  required
-                  placeholder="Ex: 15000"
-                  value={
-                    newRecipe.sellingPrice === 0 ? "" : newRecipe.sellingPrice
-                  }
-                  onChange={(e) =>
-                    setNewRecipe({
-                      ...newRecipe,
-                      sellingPrice: Number(e.target.value),
-                    })
-                  }
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#0F766E] font-mono font-bold text-gray-800"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-3 flex-1 overflow-y-auto pr-1 my-2 max-h-[40vh]">
-              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                Masukkan Takaran Komposisi:
-              </label>
-              {newRecipe.ingredientsBreakdown.map((item) => (
-                <div
-                  key={item.ingredientId}
-                  className="bg-gray-50/70 border border-gray-100 p-3.5 rounded-2xl flex items-center justify-between gap-3"
-                >
-                  <div className="space-y-0.5">
-                    <h5 className="font-bold text-xs text-gray-700">
-                      {item.ingredientName}
-                    </h5>
-                    <span className="text-[10px] text-gray-400 font-mono">
-                      Cost:{" "}
-                      <span className="text-gray-700 font-bold">
-                        {formatIDR(item.subTotalCost)}
-                      </span>
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      step="any"
-                      placeholder="0"
-                      value={item.qtyUsed === 0 ? "" : item.qtyUsed}
-                      onChange={(e) =>
-                        handleNewRecipeQtyChange(
-                          item.ingredientId,
-                          Number(e.target.value),
-                        )
-                      }
-                      className="w-20 text-center bg-white border border-gray-200 rounded-xl py-1.5 px-2 font-mono font-bold text-xs focus:outline-none focus:border-[#0F766E]"
-                    />
-                    <span className="text-[10px] font-bold text-gray-400 uppercase w-8 font-mono">
-                      {item.unit}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="bg-[#0F766E] text-white rounded-2xl p-4 my-4 flex justify-between items-center font-mono text-xs">
-              <div>
-                <span className="text-[10px] text-white/70 block font-sans font-bold">
-                  LIVE TOTAL HPP:
-                </span>
-                <span className="text-base font-black">
-                  {formatIDR(getRecipeTotalHpp(newRecipe.ingredientsBreakdown))}
-                </span>
-              </div>
-              <div className="text-right">
-                <span className="text-[10px] text-white/70 block font-sans font-bold">
-                  ESTIMASI MARGIN:
-                </span>
-                <span className="text-sm font-black text-amber-300">
-                  {newRecipe.sellingPrice > 0
-                    ? `+${(((newRecipe.sellingPrice - getRecipeTotalHpp(newRecipe.ingredientsBreakdown)) / newRecipe.sellingPrice) * 100).toFixed(1)}%`
-                    : "0.0%"}
-                </span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-3 pt-4 border-t border-gray-100">
-              <button
-                type="button"
-                onClick={() => setIsAddModalOpen(false)}
-                className="col-span-1 border border-gray-200 text-gray-500 font-bold py-3 rounded-xl text-xs uppercase tracking-wider"
-              >
-                Batal
-              </button>
-              <button
-                type="submit"
-                disabled={isSaving}
-                className="col-span-2 bg-[#EF5B2B] text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wider shadow-lg shadow-[#EF5B2B]/10 hover:bg-opacity-95 flex items-center justify-center gap-2"
-              >
-                {isSaving ? (
-                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                ) : (
-                  "🚀 Rilis Menu Baru"
-                )}
-              </button>
-            </div>
-          </form>
-        </div>
-      )} */}
-
       {/* 📱 INTERACTIVE SLIDE-UP MODAL: BAHAN BAKU BARU */}
       {isAddBahanBakuModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center z-50 p-0 md:p-4 animate-in fade-in duration-200">
@@ -849,9 +744,9 @@ export default function HppSystemPage() {
                   type="text"
                   required
                   placeholder="Ex: Milk, Beans"
-                  value={newRecipe.menuName}
+                  value={newRecipe.name}
                   onChange={(e) =>
-                    setNewRecipe({ ...newRecipe, menuName: e.target.value })
+                    setNewRecipe({ ...newRecipe, name: e.target.value })
                   }
                   className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#0F766E] font-semibold text-gray-800"
                 />
@@ -865,12 +760,12 @@ export default function HppSystemPage() {
                   required
                   placeholder="Ex: 15000"
                   value={
-                    newRecipe.purchaseCost === 0 ? "" : newRecipe.purchaseCost
+                    newRecipe.purchase_cost === 0 ? "" : newRecipe.purchase_cost
                   }
                   onChange={(e) =>
                     setNewRecipe({
                       ...newRecipe,
-                      purchaseCost: Number(e.target.value),
+                      purchase_cost: Number(e.target.value),
                     })
                   }
                   className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#0F766E] font-mono font-bold text-gray-800"
@@ -885,14 +780,14 @@ export default function HppSystemPage() {
                   required
                   placeholder="Ex: 1000/500/1200"
                   value={
-                    newRecipe.conversionFactor === 0
+                    newRecipe.conversion_factor === 0
                       ? ""
-                      : newRecipe.conversionFactor
+                      : newRecipe.conversion_factor
                   }
                   onChange={(e) =>
                     setNewRecipe({
                       ...newRecipe,
-                      conversionFactor: Number(e.target.value),
+                      conversion_factor: Number(e.target.value),
                     })
                   }
                   className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#0F766E] font-mono font-bold text-gray-800"
@@ -923,6 +818,144 @@ export default function HppSystemPage() {
               <button
                 type="button"
                 onClick={() => setIsAddBahanBakuModalOpen(false)}
+                className="col-span-1 border border-gray-200 text-gray-500 font-bold py-3 rounded-xl text-xs uppercase tracking-wider"
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                disabled={isSaving}
+                className="col-span-2 bg-[#EF5B2B] text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wider shadow-lg shadow-[#EF5B2B]/10 hover:bg-opacity-95 flex items-center justify-center gap-2"
+              >
+                {isSaving ? (
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                ) : (
+                  "Submit"
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* edit bahan baku */}
+      {isEditBahanBakuModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center z-50 p-0 md:p-4 animate-in fade-in duration-200">
+          <div
+            className="absolute inset-0 -z-10"
+            onClick={() => {
+              if (!isSaving) setIsEditBahanBakuModalOpen(false);
+            }}
+          />
+
+          <form
+            onSubmit={handleEditIngredients}
+            className="bg-white w-full max-w-xl rounded-t-[2.5rem] md:rounded-[2rem] p-6 md:p-8 shadow-2xl flex flex-col max-h-[90vh] border border-gray-100"
+          >
+            {/* Header Modal */}
+            <div className="flex justify-between items-start border-b border-gray-100 pb-4 mb-5">
+              <div>
+                <span className="text-[10px] bg-[#0F766E]/10 text-[#0F766E] font-black tracking-widest uppercase px-2.5 py-1 rounded-md">
+                  Edit Baku Baru
+                </span>
+                {/* <h3 className="font-black text-gray-800 text-lg tracking-tight mt-2">
+                  Bahan Baku
+                </h3> */}
+              </div>
+              <button
+                type="button"
+                disabled={isSaving}
+                onClick={() => setIsEditBahanBakuModalOpen(false)}
+                className="text-gray-400 font-mono text-lg"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Input Nama Menu & Harga Jual Kasir */}
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1.5">
+                  Nama Bahan Baku
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ex: Milk, Beans"
+                  value={editIngredient.name}
+                  onChange={(e) =>
+                    setEditIngredient({ ...editIngredient, name: e.target.value })
+                  }
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#0F766E] font-semibold text-gray-800"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1.5">
+                  Harga Beli (Rp)
+                </label>
+                <input
+                  type="number"
+                  required
+                  placeholder="Ex: 15000"
+                  value={
+                    editIngredient.purchase_cost === 0 ? "" : editIngredient.purchase_cost
+                  }
+                  onChange={(e) =>
+                    setEditIngredient({
+                      ...editIngredient,
+                      purchase_cost: Number(e.target.value),
+                    })
+                  }
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#0F766E] font-mono font-bold text-gray-800"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1.5">
+                  Conversion Factor (gr/ml/pcs)
+                </label>
+                <input
+                  type="number"
+                  required
+                  placeholder="Ex: 1000/500/1200"
+                  value={
+                    editIngredient.conversion_factor === 0
+                      ? ""
+                      : editIngredient.conversion_factor
+                  }
+                  onChange={(e) =>
+                    setEditIngredient({
+                      ...editIngredient,
+                      conversion_factor: Number(e.target.value),
+                    })
+                  }
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#0F766E] font-mono font-bold text-gray-800"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1.5">
+                  Unit
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ex: GRAM/ML/PCS"
+                  value={editIngredient.unit}
+                  onChange={(e) =>
+                    setEditIngredient({
+                      ...editIngredient,
+                      unit: e.target.value,
+                    })
+                  }
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#0F766E] font-mono font-bold text-gray-800"
+                />
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="grid grid-cols-3 gap-3 pt-4 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => setIsEditBahanBakuModalOpen(false)}
                 className="col-span-1 border border-gray-200 text-gray-500 font-bold py-3 rounded-xl text-xs uppercase tracking-wider"
               >
                 Batal
