@@ -102,6 +102,8 @@ export default function SalesLogPage() {
     return matchesSearch && matchesMethod;
   });
 
+  console.log({ selectedTx })
+
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
       {/* HEADER SECTION */}
@@ -282,7 +284,7 @@ export default function SalesLogPage() {
                   className="flex justify-between items-start text-xs font-medium"
                 >
                   <div className="space-y-0.5 pr-4">
-                    <h5 className="font-bold text-gray-700">{item.name}</h5>
+                    <h5 className="font-bold text-gray-700">{item.product?.name}</h5>
                     <span className="text-gray-400 font-mono">
                       {item.qty} x {formatIDR(item.price)}
                     </span>

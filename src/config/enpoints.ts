@@ -28,5 +28,6 @@ export const endpoints = {
     getWithIngredients: `${BASE_URL}/products?withIngredients=true`,
     get: `${BASE_URL}/products`,
     post: `${BASE_URL}/products`,
+    patch: (id: string) => `${BASE_URL}/products/${id}`,
   }
 };
