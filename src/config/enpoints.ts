@@ -19,6 +19,10 @@ export const endpoints = {
     summary: {
       get: `${BASE_URL}/orders/summary`,
     },
+    order: {
+      init: `${BASE_URL}/orders/init`,
+      confirm: `${BASE_URL}/orders/confirm`,
+    },
     summaryRange: {
       get: (query: string) => `${BASE_URL}/orders/summary?${query}`,
     },

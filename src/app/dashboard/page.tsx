@@ -180,7 +180,7 @@ export default function DashboardPage() {
             <h3 className="text-2xl font-black text-gray-800 tracking-tight">{formatIDR(summary?.grossIncomes)}</h3>
           </div>
           <p className="text-xs text-[#0F766E] font-bold bg-[#0F766E]/5 px-2.5 py-1 rounded-lg w-fit">
-            Margin COGS: {Math.floor(summary?.marginPercentages?.grossMargin)}%
+            Gross Margin: {Math.floor(summary?.marginPercentages?.grossMargin)}%
           </p>
         </div>
 
@@ -192,9 +192,16 @@ export default function DashboardPage() {
               {formatIDR(summary?.netIncomes)}
             </h3>
           </div>
-          <p className="text-xs text-gray-400 font-medium">
-            Sisa target ke profit: <span className="text-red-500 font-bold">{formatIDR(Math.floor(summary?.breakEvenRevenue?.excessRevenueAmount))} lagi</span>
-          </p>
+          <span className="text-xs text-gray-400 font-medium">
+            {summary?.breakEvenRevenue?.excessRevenueAmount < 0 ? (
+            <>
+                Sisa target ke profit: <span className="text-red-500 font-bold">{formatIDR(Math.floor(summary?.breakEvenRevenue?.excessRevenueAmount))} lagi</span>
+            </>
+            ) : (
+            <p className="text-xs text-green-600 font-bold bg-[#0F766E]/5 px-2.5 py-1 rounded-lg w-fit">
+                Profitable: {Math.floor(summary?.breakEvenRevenue?.excessRevenuePercentage)}%
+            </p>)}
+          </span>
         </div>
 
         <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
@@ -267,7 +274,7 @@ export default function DashboardPage() {
               </div>
               <div className="flex justify-between">
                 <span>Frekuensi Transaksi / Hari:</span>
-                <span className="text-gray-800 font-bold">{summary?.transactionMetrics?.avgTransactionsPerDay} Tx/Hari</span>
+                <span className="text-gray-800 font-bold">{Math.ceil(summary?.transactionMetrics?.avgTransactionsPerDay)} Tx/Hari</span>
               </div>
             </div>
           </div>

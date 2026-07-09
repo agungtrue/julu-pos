@@ -29,6 +29,7 @@ interface RecipeItem {
   id: number;
   name: string;
   price: number;
+  size: string;
   purchase_cost: number;
   ingredientsBreakdown: RecipeIngredient[];
   productIngredients: RecipeIngredient[];
@@ -456,7 +457,7 @@ export default function HppSystemPage() {
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-4">
                     <div>
                       <h4 className="font-black text-gray-800 text-base tracking-tight">
-                        {recipe.name}
+                        {recipe.name} {recipe.size}
                       </h4>
                       <p className="text-xs text-gray-400 mt-0.5">
                         {" "}
@@ -551,8 +552,13 @@ export default function HppSystemPage() {
                   Modifikasi Resep
                 </span>
                 <h3 className="font-black text-gray-800 text-lg tracking-tight mt-2">
-                  {editingRecipe.name}
+                  {editingRecipe.name} {editingRecipe.size}
                 </h3>
+                <span className="text-[14px] text-gray-400 font-mono pl-1">
+                  <span className="text-gray-800 font-bold">
+                    {formatIDR(editingRecipe.price)}
+                  </span>
+                </span>
               </div>
               <button
                 type="button"

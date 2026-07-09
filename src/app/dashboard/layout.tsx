@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { removeAuthCookie } from '@/app/actions/auth';
-import { Home, CircleDollarSign, TrendingUp, Calculator, SquarePen, Search, Coffee, LogOut } from 'lucide-react';
+import { Home, CircleDollarSign, ArrowLeftRight, Calculator, SquarePen, Search, Coffee, LogOut } from 'lucide-react';
 
 export default function DashboardLayout({
   children,
@@ -18,6 +18,7 @@ export default function DashboardLayout({
   // Daftar Menu Navigasi Portal Julu
   const menuItems = [
     { name: 'Ringkasan Performa', path: '/dashboard', icon: Home },
+    { name: 'Orders', path: '/dashboard/orders', icon: ArrowLeftRight },
     { name: 'Sales', path: '/dashboard/sales', icon: CircleDollarSign },
     { name: 'Sistem HPP / COGS', path: '/dashboard/cogs', icon: Calculator },
     { name: 'Daftar Menu & Produk', path: '/dashboard/products', icon: Coffee },
@@ -123,7 +124,7 @@ export default function DashboardLayout({
       </aside>
 
       {/* 💻 MAIN CONTAINER AREA UNTUK ANAK HALAMAN (PAGE CONTENT) */}
-      <main className="flex-1 p-5 md:p-10 max-w-7xl mx-auto w-full overflow-x-hidden">
+      <main className="flex-1 p-5 md:p-8 max-w-7xl mx-auto w-full overflow-x-hidden">
         {children}
       </main>
 

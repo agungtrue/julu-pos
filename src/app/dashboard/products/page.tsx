@@ -5,7 +5,7 @@ import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { endpoints } from "../../../config/enpoints";
 import api from "../../../lib/api";
 import DashboardSkeleton from "@/components/DashboardSkeleton";
-import { Globe, Coffee, CupSoda, Cookie, Plus, Edit } from 'lucide-react';
+import { Globe, Coffee, CupSoda, Cookie, Plus, Edit, Search } from 'lucide-react';
 interface Product {
   id: string;
   name: string;
@@ -198,7 +198,9 @@ export default function ProductsPage() {
 
       <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
         <div className="relative flex-1">
-          <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400">🔍</span>
+          <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400">
+            <Search className="w-4 h-4"/>
+          </span>
           <input
             type="text"
             placeholder="Cari nama menu julu..."
@@ -227,7 +229,6 @@ export default function ProductsPage() {
               >
                 <Icon className="w-4 h-4" />
                 {item.label}
-                {/* {cat === 'all' ? '🌐 Semua' : cat === 'coffee' ? <Coffee className="w-5 h-5" /> : cat === 'non_coffee' ? '🍦 Non-Kopi' : '🍟 Cemilan'} */}
               </button>
             )
           })}
