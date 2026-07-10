@@ -15,7 +15,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { ProductItem, CartItem } from "./types/order.types";
-
+import { Toaster, toast } from "sonner";
 
 // later ts strict
 
@@ -101,7 +101,6 @@ export default function CreateOrderPage() {
 
   // 4. Perenggangan Filter Data Katalog Produk
   const filteredProducts = useMemo(() => {
-    console.log({ productData });
     return productData?.filter((product: ProductItem) => {
       const matchesCategory =
         selectedCategory === "all" || product.type === selectedCategory;
@@ -135,7 +134,6 @@ export default function CreateOrderPage() {
   //   init order
   const { mutate: postInitOrders } = useMutation({
     mutationFn: async (payloads: CartItem[]) => {
-      console.log({ payloads });
       const total = payloads.reduce(
         (acc, item) => acc + item.price * item.qty,
         0,
@@ -160,7 +158,6 @@ export default function CreateOrderPage() {
   // confirm order
   const { mutate: postConfirmOrders } = useMutation({
     mutationFn: async (payloads: CartItem[]) => {
-      console.log({ payloads });
       const payload = {
         uuid: orderUuid,
         items: payloads.map((data) => {
@@ -173,9 +170,15 @@ export default function CreateOrderPage() {
       return await api.post(endpoints.orders.order.confirm, payload);
     },
     onSuccess: () => {
+      toast.success("Transaksi Berhasil!", {
+        description: "Pesanan telah disimpan, silahkan cek di sales page.",
+        className:
+          "bg-emerald-50 border-emerald-200 text-emerald-800 rounded-xl",
+      });
       setOrderUuid(null);
       setCart([]);
-      playSuccessSound()
+      setCashReceived('')
+      playSuccessSound();
     },
   });
 
@@ -185,20 +188,25 @@ export default function CreateOrderPage() {
 
   const playSuccessSound = () => {
     const audio = new Audio("/sounds/kasir_sound.mp3");
-    audio.volume = 0.8; // 0.0 to 1.0)
+    audio.volume = 1.0; // 0.0 to 1.0)
 
     audio.play().catch((error) => {
-      console.warn(
-        "Audio playback on hold browser policy",
-        error,
-      );
+      console.warn("Audio playback on hold browser policy", error);
     });
+  };
+
+  const formatIDR = (num: number) => {
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+    }).format(num);
   };
 
   if (isLoadingProductData) return <DashboardSkeleton />;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-10 h-[calc(100vh-4rem)] overflow-hidden bg-gray-50">
+    <div className="grid grid-cols-1 lg:grid-cols-10 lg:h-[calc(100vh-4rem)] overflow-hidden bg-gray-50">
       {/* 🟢 SISI KIRI: KATALOG & FILTER (70%) */}
       <div className="lg:col-span-7 flex flex-col h-full overflow-hidden p-6 space-y-4">
         {/* Search Bar */}
@@ -263,8 +271,8 @@ export default function CreateOrderPage() {
                 </h3>
               </div>
               <div className="text-right">
-                <span className="font-black text-sm text-gray-900">
-                  Rp {product.price.toLocaleString("id-ID")}
+                <span className="text-base font-black text-gray-800 font-mono tracking-tight">
+                  {formatIDR(product.price)}
                 </span>
               </div>
             </div>
@@ -479,6 +487,7 @@ export default function CreateOrderPage() {
           </div>
         </div>
       </div>
+      <Toaster />
     </div>
   );
 }
