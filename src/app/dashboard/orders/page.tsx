@@ -249,34 +249,45 @@ export default function CreateOrderPage() {
         {/* flex-1 overflow-y-auto pr-1 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 pb-6 scrollbar-thin
         flex-1 overflow-y-auto pr-1 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 content-start gap-4 pb-6 scrollbar-thin */}
         <div className="flex-1 overflow-y-auto pr-1 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 content-start gap-4 pb-6 scrollbar-thin">
-          {filteredProducts.map((product: ProductItem) => (
-            <div
-              key={product.id}
-              onClick={() => handleAddToCart(product)}
-              className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:border-[#0F766E] hover:shadow-md cursor-pointer transition-all flex flex-col justify-between h-40 group"
-            >
-              <div className="space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                    {product.type.replace("_", " ")}
-                  </span>
-                  {product.size && (
-                    <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded">
-                      {product.size}
+          {filteredProducts.map((product: ProductItem) => {
+            const cartItem = cart.find((c) => c.id === product.id);
+
+            const isSelected = cartItem ? cartItem.qty : 0;
+            return (
+              <div
+                key={product.id}
+                onClick={() => handleAddToCart(product)}
+                className={
+                    `bg-white p-5 rounded-2xl border
+                     ${isSelected 
+                        ? 'border-2 border-[#0A8F8A] bg-[#0A8F8A]/5 shadow-md scale-[1.01]' 
+                        : 'border-gray-100 shadow-sm'
+                        }
+                     hover:border-[#0F766E] hover:shadow-md cursor-pointer transition-all flex flex-col justify-between h-40 group`}
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                      {product.type.replace("_", " ")}
                     </span>
-                  )}
+                    {product.size && (
+                      <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded">
+                        {product.size}
+                      </span>
+                    )}
+                  </div>
+                  <h3 className="font-bold text-gray-800 text-sm group-hover:text-[#0F766E] transition-colors line-clamp-2">
+                    {product.name}
+                  </h3>
                 </div>
-                <h3 className="font-bold text-gray-800 text-sm group-hover:text-[#0F766E] transition-colors line-clamp-2">
-                  {product.name}
-                </h3>
+                <div className="text-right">
+                  <span className="text-base font-black text-gray-800 font-mono tracking-tight">
+                    {formatIDR(product.price)}
+                  </span>
+                </div>
               </div>
-              <div className="text-right">
-                <span className="text-base font-black text-gray-800 font-mono tracking-tight">
-                  {formatIDR(product.price)}
-                </span>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 

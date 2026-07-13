@@ -1,13 +1,12 @@
 "use client";
 
 import React, { useState } from "react";
-import { useQuery } from '@tanstack/react-query';
-import api from '../../../lib/api'
-import { formatJuluDate } from '../../../lib/utils'
-import { endpoints } from '../../../config/enpoints'
-import DashboardSkeleton from '@/components/DashboardSkeleton';
-import { Search } from 'lucide-react';
-
+import { useQuery } from "@tanstack/react-query";
+import api from "../../../lib/api";
+import { formatJuluDate } from "../../../lib/utils";
+import { endpoints } from "../../../config/enpoints";
+import DashboardSkeleton from "@/components/DashboardSkeleton";
+import { Search } from "lucide-react";
 
 interface TransactionDetail {
   name: string;
@@ -18,11 +17,11 @@ interface TransactionItem {
   name: string;
   qty: number;
   price: number;
-  product: TransactionDetail
+  product: TransactionDetail;
 }
 
 interface User {
-  name: string
+  name: string;
 }
 interface Transaction {
   id: string;
@@ -31,8 +30,8 @@ interface Transaction {
   items: TransactionItem[];
   discountAmount: number;
   finalAmount: number;
-  user: User,
-  total: number,
+  user: User;
+  total: number;
   payment_method: "qris" | "cash";
 }
 
@@ -41,7 +40,7 @@ export default function SalesLogPage() {
     "ALL",
   );
   const [searchQuery, setSearchQuery] = useState("");
-  const [orderTime, setOrderTime] = useState<'today' | ''>('today');
+  const [orderTime, setOrderTime] = useState<"today" | "">("today");
 
   // State untuk Manajemen Modal Detail Order
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -63,7 +62,31 @@ export default function SalesLogPage() {
     queryFn: () => fetchOrderListData(orderTime),
   });
 
-  if (isLoading) return <DashboardSkeleton/>
+  // report
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedRange, setSelectedRange] = useState("today"); // today, this_month, last_month, custom
+  const [customStartDate, setCustomStartDate] = useState("");
+  const [customEndDate, setCustomEndDate] = useState("");
+
+  // Handler utama saat tombol ekspor di dalam modal ditekan
+  const handleExportSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Payload siap lempar ke logic date eksisting Anda
+    const payload = {
+      rangeType: selectedRange,
+      startDate: selectedRange === "custom" ? customStartDate : null,
+      endDate: selectedRange === "custom" ? customEndDate : null,
+    };
+
+    // console.log("Triggering export with payload:", payload);
+
+    // Jalankan fungsi export logic Anda di sini...
+
+    setIsOpen(false);
+  };
+
+  if (isLoading) return <DashboardSkeleton />;
   // return <DashboardSkeleton/>
 
   const formatIDR = (num: number) => {
@@ -124,34 +147,58 @@ export default function SalesLogPage() {
         </div>
       </div>
 
-      <div className="flex items-center bg-gray-100 p-1 rounded-xl w-fit self-start sm:self-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 w-full bg-white p-4 rounded-2xl border border-gray-100 shadow-sm mb-6">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <button
-            onClick={() => setOrderTime('today')}
+            onClick={() => setOrderTime("today")}
             className={`px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 ${
-              orderTime === 'today'
-                ? 'bg-white text-teal-700 shadow-sm'
-                : 'text-gray-500 hover:text-gray-800'
+              orderTime === "today"
+                ? "bg-white text-teal-700 shadow-sm"
+                : "text-gray-500 hover:text-gray-800"
             }`}
           >
             Today
           </button>
           <button
-            onClick={() => setOrderTime('')}
+            onClick={() => setOrderTime("")}
             className={`px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 ${
-              orderTime === ''
-                ? 'bg-white text-teal-700 shadow-sm'
-                : 'text-gray-500 hover:text-gray-800'
+              orderTime === ""
+                ? "bg-white text-teal-700 shadow-sm"
+                : "text-gray-500 hover:text-gray-800"
             }`}
           >
             All
           </button>
         </div>
 
+        <div className="w-full sm:w-auto flex justify-end">
+          <button
+            onClick={() => setIsOpen(true)}
+            className="w-full sm:w-auto px-5 py-2.5 bg-[#0A8F8A] hover:bg-[#08736f] text-white text-sm font-semibold rounded-xl transition-all duration-200 shadow-sm flex items-center justify-center gap-2 group"
+          >
+            <svg
+              className="w-4 h-4 text-white group-hover:translate-y-0.5 transition-transform duration-200"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2.5"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+              />
+            </svg>
+            Export Laporan
+          </button>
+        </div>
+      </div>
+
       {/* FILTER & SEARCH BAR CONTROLLER */}
       <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
         <div className="relative flex-1">
           <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400">
-            <Search className="w-4 h-4"/>
+            <Search className="w-4 h-4" />
           </span>
           <input
             type="text"
@@ -264,7 +311,7 @@ export default function SalesLogPage() {
               <div className="text-right">
                 Kasir:{" "}
                 <span className="text-gray-800 font-bold block font-sans mt-0.5">
-                  {selectedTx?.user?.name || ''}
+                  {selectedTx?.user?.name || ""}
                 </span>
               </div>
             </div>
@@ -280,7 +327,9 @@ export default function SalesLogPage() {
                   className="flex justify-between items-start text-xs font-medium"
                 >
                   <div className="space-y-0.5 pr-4">
-                    <h5 className="font-bold text-gray-700">{item.product?.name}</h5>
+                    <h5 className="font-bold text-gray-700">
+                      {item.product?.name}
+                    </h5>
                     <span className="text-gray-400 font-mono">
                       {item.qty} x {formatIDR(item.price)}
                     </span>
@@ -346,6 +395,189 @@ export default function SalesLogPage() {
             >
               Kembali
             </button>
+          </div>
+        </div>
+      )}
+
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-xl border border-gray-100 overflow-hidden transform transition-all scale-100 animate-scale-up">
+            {/* MODAL HEADER */}
+            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-5 bg-[#FBBF24] rounded-full"></div>
+                <h3 className="font-bold text-gray-800 text-base">
+                  Pilih Periode Laporan
+                </h3>
+              </div>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-all"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            {/* MODAL BODY / FORM */}
+            <form
+              onSubmit={handleExportSubmit}
+              className="p-6 flex flex-col gap-4"
+            >
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                Opsi Cepat Periode
+              </label>
+
+              {/* OPSI FILTER LAYOUT GRID */}
+              <div className="grid grid-cols-1 gap-2.5">
+                {/* 1. Hari Ini */}
+                <label
+                  className={`flex items-center justify-between p-3 border rounded-xl cursor-pointer transition-all duration-150 ${selectedRange === "today" ? "border-[#0A8F8A] bg-[#0A8F8A]/5 font-semibold text-[#0A8F8A]" : "border-gray-200 hover:bg-gray-50 text-gray-700"}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="radio"
+                      name="range"
+                      value="today"
+                      checked={selectedRange === "today"}
+                      onChange={() => setSelectedRange("today")}
+                      className="w-4 h-4 accent-[#0A8F8A]"
+                    />
+                    <span className="text-sm">
+                      Hari Ini (Real-Time Closing)
+                    </span>
+                  </div>
+                </label>
+
+                {/* 2. Bulan Ini */}
+                <label
+                  className={`flex items-center justify-between p-3 border rounded-xl cursor-pointer transition-all duration-150 ${selectedRange === "this_month" ? "border-[#0A8F8A] bg-[#0A8F8A]/5 font-semibold text-[#0A8F8A]" : "border-gray-200 hover:bg-gray-50 text-gray-700"}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="radio"
+                      name="range"
+                      value="this_month"
+                      checked={selectedRange === "this_month"}
+                      onChange={() => setSelectedRange("this_month")}
+                      className="w-4 h-4 accent-[#0A8F8A]"
+                    />
+                    <span className="text-sm">Bulan Ini</span>
+                  </div>
+                </label>
+
+                {/* 3. Bulan Lalu */}
+                <label
+                  className={`flex items-center justify-between p-3 border rounded-xl cursor-pointer transition-all duration-150 ${selectedRange === "last_month" ? "border-[#0A8F8A] bg-[#0A8F8A]/5 font-semibold text-[#0A8F8A]" : "border-gray-200 hover:bg-gray-50 text-gray-700"}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="radio"
+                      name="range"
+                      value="last_month"
+                      checked={selectedRange === "last_month"}
+                      onChange={() => setSelectedRange("last_month")}
+                      className="w-4 h-4 accent-[#0A8F8A]"
+                    />
+                    <span className="text-sm">Bulan Lalu</span>
+                  </div>
+                </label>
+
+                {/* 4. Get by Date (Custom) */}
+                <label
+                  className={`flex items-center justify-between p-3 border rounded-xl cursor-pointer transition-all duration-150 ${selectedRange === "custom" ? "border-[#0A8F8A] bg-[#0A8F8A]/5 font-semibold text-[#0A8F8A]" : "border-gray-200 hover:bg-gray-50 text-gray-700"}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="radio"
+                      name="range"
+                      value="custom"
+                      checked={selectedRange === "custom"}
+                      onChange={() => setSelectedRange("custom")}
+                      className="w-4 h-4 accent-[#0A8F8A]"
+                    />
+                    <span className="text-sm">
+                      Pilih Tanggal Kustom (Get by Date)
+                    </span>
+                  </div>
+                </label>
+              </div>
+
+              {/* 📅 DYNAMIC CUSTOM DATE INPUTS (Hanya muncul jika 'custom' dipilih) */}
+              <div
+                className={`transition-all duration-300 ease-in-out overflow-hidden ${selectedRange === "custom" ? "max-h-40 opacity-100 mt-2" : "max-h-0 opacity-0"}`}
+              >
+                <div className="p-4 bg-gray-50 rounded-xl border border-gray-150 grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1">
+                      Dari Tanggal
+                    </label>
+                    <input
+                      type="date"
+                      value={customStartDate}
+                      onChange={(e) => setCustomStartDate(e.target.value)}
+                      required={selectedRange === "custom"}
+                      className="w-full p-2 bg-white border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#0A8F8A] text-gray-700 font-medium"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1">
+                      Sampai Tanggal
+                    </label>
+                    <input
+                      type="date"
+                      value={customEndDate}
+                      onChange={(e) => setCustomEndDate(e.target.value)}
+                      required={selectedRange === "custom"}
+                      className="w-full p-2 bg-white border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#0A8F8A] text-gray-700 font-medium"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 🛠️ MODAL ACTIONS */}
+              <div className="flex items-center justify-end gap-2.5 mt-4 pt-4 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setIsOpen(false)}
+                  className="px-4 py-2 text-sm font-semibold text-gray-500 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all"
+                >
+                  Batal
+                </button>
+
+                {/* Tombol Konfirmasi - Orange Julu */}
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 bg-[#EF5B2B] hover:bg-[#d64a20] text-white text-sm font-semibold rounded-xl transition-all duration-200 shadow-md flex items-center gap-1.5"
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2.5"
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                  Export Sekarang
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
