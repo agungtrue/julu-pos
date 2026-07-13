@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { removeAuthCookie } from '@/app/actions/auth';
-import { Home, CircleDollarSign, ArrowLeftRight, Calculator, SquarePen, Search, Coffee, LogOut } from 'lucide-react';
+import { Home, CircleDollarSign, ArrowLeftRight, Calculator, Users, Search, Coffee, LogOut, ArrowBigDownIcon } from 'lucide-react';
 
 export default function DashboardLayout({
   children,
@@ -20,6 +20,8 @@ export default function DashboardLayout({
     { name: 'Ringkasan Performa', path: '/dashboard', icon: Home },
     { name: 'Orders', path: '/dashboard/orders', icon: ArrowLeftRight },
     { name: 'Sales', path: '/dashboard/sales', icon: CircleDollarSign },
+    { name: 'Users', path: '/dashboard/users', icon: Users },
+    { name: 'OPEX Management', path: '/dashboard/opex', icon: ArrowBigDownIcon },
     { name: 'Sistem HPP / COGS', path: '/dashboard/cogs', icon: Calculator },
     { name: 'Daftar Menu & Produk', path: '/dashboard/products', icon: Coffee },
   ];
