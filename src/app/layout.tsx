@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Admin Portal | Julu Coffee & Snacks",
-  description: "Julu Coffee Admin Web App",
+  title: "Admin Portal | Julu POS",
+  description: "Julu POS Admin Web App",
 };
 
 export default function RootLayout({

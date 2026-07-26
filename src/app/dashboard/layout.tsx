@@ -4,7 +4,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { removeAuthCookie } from '@/app/actions/auth';
-import { Home, CircleDollarSign, ArrowLeftRight, Calculator, Users, Search, Coffee, LogOut, ArrowBigDownIcon } from 'lucide-react';
+import { useAuthStore } from '@/stores/authStore';
+import { Home, CircleDollarSign, Book, ArrowLeftRight, Calculator, Users, UserCheck2, Coffee, LogOut, ArrowBigDownIcon } from 'lucide-react';
 
 export default function DashboardLayout({
   children,
@@ -14,19 +15,26 @@ export default function DashboardLayout({
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  const clearUser = useAuthStore((state) => state.clearUser);
+  const user = useAuthStore((state) => state.user);
+  const userRoles = user?.role
 
   // Daftar Menu Navigasi Portal Julu
   const menuItems = [
-    { name: 'Ringkasan Performa', path: '/dashboard', icon: Home },
-    { name: 'Orders', path: '/dashboard/orders', icon: ArrowLeftRight },
-    { name: 'Sales', path: '/dashboard/sales', icon: CircleDollarSign },
-    { name: 'Users', path: '/dashboard/users', icon: Users },
-    { name: 'OPEX Management', path: '/dashboard/opex', icon: ArrowBigDownIcon },
-    { name: 'Sistem HPP / COGS', path: '/dashboard/cogs', icon: Calculator },
-    { name: 'Daftar Menu & Produk', path: '/dashboard/products', icon: Coffee },
-  ];
+    { name: 'Ringkasan Langganan', path: '/dashboard/admin', roles: ['SUPER_ADMIN'], icon: Home },
+    { name: 'Ringkasan Bisnis', path: '/dashboard', roles: ['OWNER_ADMIN', 'EMPLOYEE'], icon: Home },
+    { name: 'Faktur', path: '/dashboard/invoices', roles: ['SUPER_ADMIN'], icon: Book },
+    { name: 'Manajemen Tenant', path: '/dashboard/tenants', roles: ['SUPER_ADMIN'], icon: UserCheck2 },
+    { name: 'Pesanan Baru', path: '/dashboard/orders', roles: ['OWNER_ADMIN', 'EMPLOYEE'], icon: ArrowLeftRight },
+    { name: 'Riwayat Transaksi', path: '/dashboard/sales', roles: ['SUPER_ADMIN', 'OWNER_ADMIN', 'EMPLOYEE'], icon: CircleDollarSign },
+    { name: 'Kelola Staf & Karyawan', path: '/dashboard/users', roles: ['SUPER_ADMIN', 'OWNER_ADMIN'], icon: Users },
+    { name: 'Biaya Operasional', path: '/dashboard/opex', roles: ['OWNER_ADMIN'], icon: ArrowBigDownIcon },
+    { name: 'Resep & Bahan Baku', path: '/dashboard/cogs', roles: ['OWNER_ADMIN'], icon: Calculator },
+    { name: 'Katalog Menu', path: '/dashboard/products', roles: ['OWNER_ADMIN'], icon: Coffee },
+  ].filter(data => userRoles && data.roles.includes(userRoles));
 
   const handleLogout = () => {
+    clearUser()
     removeAuthCookie()
     router.push('/login');
   };
@@ -40,7 +48,7 @@ export default function DashboardLayout({
           <div className="w-8 h-8 rounded-lg bg-white text-[#0F766E] font-black flex items-center justify-center text-sm shadow-sm">
             J
           </div>
-          <span className="font-bold text-sm tracking-wide uppercase">Julu Portal</span>
+          <span className="font-bold text-sm tracking-wide uppercase">{user?.tenant?.name || 'SUPER ADMIN MASTER'}</span>
         </div>
         
         {/* Tombol Hamburger Menu */}
@@ -71,8 +79,8 @@ export default function DashboardLayout({
               J
             </div>
             <div>
-              <h2 className="font-extrabold text-sm tracking-wider uppercase">JULU COFFEE</h2>
-              <p className="text-[10px] text-white/60 tracking-widest uppercase font-medium">Snacks & Booth 01</p>
+              <h2 className="font-extrabold text-sm tracking-wider uppercase">{user?.tenant?.name || 'SUPER ADMIN MASTER'}</h2>
+              <p className="text-[10px] text-white/60 tracking-widest uppercase font-medium"></p>
             </div>
           </div>
 
@@ -105,19 +113,22 @@ export default function DashboardLayout({
 
         {/* BOTTOM SECTION: USER CARD & LOGOUT */}
         <div className="border-t border-white/10 pt-6 mt-6">
-          <div className="flex items-center gap-3.5 mb-5 px-2">
+          <div className="flex items-center gap-3.5 mb-5 px-2 cursor-pointer" onClick={(e) => {
+            e.preventDefault()
+            router.push('/dashboard/my');
+          }}>
             <div className="w-10 h-10 rounded-xl bg-[#F59E0B] text-white font-bold flex items-center justify-center text-sm shadow-sm">
-              AG
+              {user?.name?.charAt(0) || "U"}
             </div>
             <div>
-              <h4 className="text-xs font-bold text-white tracking-wide">Admin</h4>
-              <p className="text-[10px] text-white/60">Owner / Operator</p>
+              <h4 className="text-xs font-bold text-white tracking-wide">{user?.name || ''}</h4>
+              <p className="text-[10px] text-white/60">{user?.role.replace('_', ' ') || ''}</p>
             </div>
           </div>
 
           <button
             onClick={handleLogout}
-            className="w-full bg-white/10 hover:bg-red-600/20 hover:text-red-300 border border-transparent hover:border-red-500/20 text-white/80 font-bold py-3 px-4 rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2"
+            className="w-full cursor-pointer bg-white/10 hover:bg-red-600/20 hover:text-red-300 border border-transparent hover:border-red-500/20 text-white/80 font-bold py-3 px-4 rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2"
           >
             <LogOut className="w-4 h-4" />
             Logout

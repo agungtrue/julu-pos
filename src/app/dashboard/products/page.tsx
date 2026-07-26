@@ -1,41 +1,52 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { endpoints } from "../../../config/enpoints";
 import api from "../../../lib/api";
 import DashboardSkeleton from "@/components/DashboardSkeleton";
-import { Globe, Coffee, CupSoda, Cookie, Plus, Edit, Search } from 'lucide-react';
+import {
+  Globe,
+  Coffee,
+  CupSoda,
+  Cookie,
+  Plus,
+  Edit,
+  Search,
+} from "lucide-react";
+import { Toaster, toast } from "sonner";
 interface Product {
   id: string;
   name: string;
   price: number;
-  type: 'coffee' | 'non_coffee' | 'snacks';
+  type: "coffee" | "non_coffee" | "snacks";
   size: string;
   cogs: number;
   isActive: boolean;
-  productIngredients: []
+  productIngredients: [];
 }
 
 interface ProductItem {
-  sub_total_cost: number
+  sub_total_cost: number;
 }
 
 export default function ProductsPage() {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
   const [isEditProductModalOpen, setIsEditProductModalOpen] = useState(false);
 
   const [isSaving, setIsSaving] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<'all' | 'coffee' | 'non_coffee' | 'snacks'>('all');
+  const [selectedCategory, setSelectedCategory] = useState<
+    "all" | "coffee" | "non_coffee" | "snacks"
+  >("all");
   const [newProduct, setNewProduct] = useState<{
-      name: string;
-      price: number;
-      type: string;
-      size: string;
-      cogs: number;
-      isActive: true;
-    }>({
+    name: string;
+    price: number;
+    type: string;
+    size: string;
+    cogs: number;
+    isActive: true;
+  }>({
     name: "",
     price: 0,
     type: "",
@@ -52,7 +63,7 @@ export default function ProductsPage() {
     size: "",
     cogs: 0,
     isActive: true,
-    productIngredients: []
+    productIngredients: [],
   });
 
   // get product
@@ -60,15 +71,15 @@ export default function ProductsPage() {
     const url = endpoints.products.getWithIngredients;
 
     const response = await api.get(url);
-    return response?.data?.data
+    return response?.data?.data || [];
   };
 
   const { data: productData, isLoading: isLoadingProductData } = useQuery({
-    queryKey: ['productData'],
+    queryKey: ["productData"],
     queryFn: fetchProductData,
   });
 
-  const products = productData ?? []
+  const products = productData ?? [];
 
   const calculateMargin = (price: number, hpp: number) => {
     const profit = price - hpp;
@@ -81,29 +92,34 @@ export default function ProductsPage() {
       0,
     );
 
-    return cogs
-  }
+    return cogs;
+  };
 
   const formatIDR = (num: number) => {
-    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+    }).format(num);
   };
 
   // Logika Pemfilteran Data Produk Dinamis
   const filteredProducts = products?.filter((p: Product) => {
-    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || p.type === selectedCategory;
+    const matchesSearch = p.name
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    const matchesCategory =
+      selectedCategory === "all" || p.type === selectedCategory;
     return matchesSearch && matchesCategory;
   });
-
-  const queryClient = useQueryClient();
 
   interface SaveNewProduct {
     name: string;
     price: number;
     type: string;
     size: string;
-    cogs: number,
-    isActive: boolean,
+    cogs: number;
+    isActive: boolean;
   }
 
   interface EditProduct {
@@ -112,18 +128,28 @@ export default function ProductsPage() {
     price: number;
     type: string;
     size: string;
-    cogs: number,
-    isActive: boolean,
+    cogs: number;
+    isActive: boolean;
   }
+
+  const queryClient = useQueryClient();
 
   const { mutate: postNewProduct, isPending } = useMutation({
     mutationFn: async (payload: SaveNewProduct) => {
       return await api.post(endpoints.products.post, payload);
     },
     onSuccess: () => {
-      setIsAddProductModalOpen(false)
+      setIsAddProductModalOpen(false);
       setIsSaving(false);
-      queryClient.invalidateQueries({ queryKey: ['productData'] });
+      queryClient.invalidateQueries({ queryKey: ["productData"] });
+      queryClient.invalidateQueries({ queryKey: ["ingredientsData"] });
+    },
+    onError: (err) => {
+      setIsSaving(false);
+      toast.error("Error!", {
+        description: (err as any).response?.data?.message || 'something went wrong',
+        className: "bg-emerald-50 border-red-200 text-red-800 rounded-xl",
+      });
     },
   });
 
@@ -132,9 +158,10 @@ export default function ProductsPage() {
       return await api.patch(endpoints.products.patch(payload.id), payload);
     },
     onSuccess: () => {
-      setIsEditProductModalOpen(false)
+      setIsEditProductModalOpen(false);
       setIsSaving(false);
-      queryClient.invalidateQueries({ queryKey: ['productData'] });
+      queryClient.invalidateQueries({ queryKey: ["productData"] });
+      queryClient.invalidateQueries({ queryKey: ["ingredientsData"] });
     },
   });
 
@@ -168,27 +195,29 @@ export default function ProductsPage() {
   };
 
   const CATEGORY_MAP = {
-    all: { label: 'Semua', icon: Globe },
-    coffee: { label: 'Kopi', icon: Coffee },
-    non_coffee: { label: 'Non-Kopi', icon: CupSoda }, // Pengganti es krim/sirup
-    snacks: { label: 'Cemilan', icon: Cookie },       // Pengganti kentang goreng
-  } as const
+    all: { label: "Semua", icon: Globe },
+    coffee: { label: "Kopi", icon: Coffee },
+    non_coffee: { label: "Non-Kopi", icon: CupSoda }, // Pengganti es krim/sirup
+    snacks: { label: "Cemilan", icon: Cookie }, // Pengganti kentang goreng
+  } as const;
 
-  if (isLoadingProductData) return <DashboardSkeleton/>
-    
+  if (isLoadingProductData) return <DashboardSkeleton />;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
-      
       {/* ☕ PAGE HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-200/60 pb-5">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800 tracking-tight">Daftar Menu & Produk</h1>
+          <h1 className="text-2xl font-bold text-gray-800 tracking-tight">
+            Daftar Menu & Produk
+          </h1>
           <p className="text-xs text-gray-400 mt-1 font-medium uppercase tracking-wider">
-            Kelola katalog harga jual, estimasi HPP, dan status ketersediaan booth
+            Kelola katalog harga jual, estimasi HPP, dan status ketersediaan
+            booth
           </p>
         </div>
-        <button className="w-full sm:w-auto bg-[#0F766E] text-white font-bold px-5 py-3 rounded-xl text-sm shadow-md shadow-[#0F766E]/10 hover:bg-opacity-95 active:scale-[0.99] transition-all flex items-center justify-center gap-2"
+        <button
+          className="w-full sm:w-auto bg-[#0F766E] text-white font-bold px-5 py-3 rounded-xl text-sm shadow-md shadow-[#0F766E]/10 hover:bg-opacity-95 active:scale-[0.99] transition-all flex items-center justify-center gap-2"
           onClick={() => setIsAddProductModalOpen(true)}
         >
           <Plus className="w-4 h-4" />
@@ -199,7 +228,7 @@ export default function ProductsPage() {
       <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
         <div className="relative flex-1">
           <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400">
-            <Search className="w-4 h-4"/>
+            <Search className="w-4 h-4" />
           </span>
           <input
             type="text"
@@ -209,9 +238,9 @@ export default function ProductsPage() {
             className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#0F766E] focus:bg-white transition-colors"
           />
         </div>
-        
+
         <div className="flex gap-1 overflow-x-auto pb-1 lg:pb-0 scrollbar-none font-medium">
-          {(['all', 'coffee', 'non_coffee', 'snacks'] as const).map((cat) => {
+          {(["all", "coffee", "non_coffee", "snacks"] as const).map((cat) => {
             const item = CATEGORY_MAP[cat as keyof typeof CATEGORY_MAP];
             const Icon = item.icon;
 
@@ -221,36 +250,46 @@ export default function ProductsPage() {
                 onClick={() => setSelectedCategory(cat)}
                 className={`
                   flex items-center gap-2 px-3 py-2 text-xs font-bold uppercase rounded-xl border whitespace-nowrap transition-all
-                  ${selectedCategory === cat 
-                    ? 'bg-[#EF5B2B] text-white shadow-sm' 
-                    : 'bg-gray-50 hover:bg-gray-100 text-gray-500'
+                  ${
+                    selectedCategory === cat
+                      ? "bg-[#EF5B2B] text-white shadow-sm"
+                      : "bg-gray-50 hover:bg-gray-100 text-gray-500"
                   }
                 `}
               >
                 <Icon className="w-4 h-4" />
                 {item.label}
               </button>
-            )
+            );
           })}
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredProducts.map((product: Product) => {
-          const marginPercentage = calculateMargin(product.price, calculateCogs(product));
-          
+        {filteredProducts?.map((product: Product) => {
+          const marginPercentage = calculateMargin(
+            product.price,
+            calculateCogs(product),
+          );
+
           return (
-            <div 
-              key={product.id} 
+            <div
+              key={product.id}
               className="bg-white border border-gray-100 rounded-3xl p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between relative group"
             >
               <div className="flex justify-between items-center mb-4">
-                <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-md ${
-                  product.type === 'coffee' ? 'bg-[#0F766E]/10 text-[#0F766E]' : product.type === 'non_coffee' ? 'bg-amber-500/10 text-amber-600' : 'bg-[#EF5B2B]/10 text-[#EF5B2B]'
-                }`}>
+                <span
+                  className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-md ${
+                    product.type === "coffee"
+                      ? "bg-[#0F766E]/10 text-[#0F766E]"
+                      : product.type === "non_coffee"
+                        ? "bg-amber-500/10 text-amber-600"
+                        : "bg-[#EF5B2B]/10 text-[#EF5B2B]"
+                  }`}
+                >
                   {product.type}
                 </span>
-                
+
                 {/* <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                   product.stockStatus === 'TERSEDIA' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500'
                 }`}>
@@ -270,11 +309,15 @@ export default function ProductsPage() {
               <div className="bg-gray-50/70 border border-gray-100 rounded-2xl p-3.5 space-y-2 mb-4 text-xs font-medium">
                 <div className="flex justify-between">
                   <span className="text-gray-400">Harga Jual:</span>
-                  <span className="text-gray-800 font-bold font-mono">{formatIDR(product.price)}</span>
+                  <span className="text-gray-800 font-bold font-mono">
+                    {formatIDR(product.price)}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Estimasi HPP:</span>
-                  <span className="text-gray-500 font-semibold font-mono">{formatIDR(calculateCogs(product))}</span>
+                  <span className="text-gray-500 font-semibold font-mono">
+                    {formatIDR(calculateCogs(product))}
+                  </span>
                   {/* 0 */}
                 </div>
                 <div className="flex justify-between pt-1.5 border-t border-gray-200/50 text-[11px]">
@@ -286,10 +329,11 @@ export default function ProductsPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-2 pt-2">
-                <button className="flex flex-1 gap-2 justify-center items-center border border-gray-200 text-gray-600 font-bold py-2 px-3 rounded-xl text-xs hover:bg-gray-50 active:scale-[0.98] transition-all"
+                <button
+                  className="flex flex-1 gap-2 justify-center items-center border border-gray-200 text-gray-600 font-bold py-2 px-3 rounded-xl text-xs hover:bg-gray-50 active:scale-[0.98] transition-all"
                   onClick={() => {
-                    setIsEditProductModalOpen(true)
-                    setEditProduct({ ...editProduct, ...product })
+                    setIsEditProductModalOpen(true);
+                    setEditProduct({ ...editProduct, ...product });
                   }}
                 >
                   <Edit className="w-4 h-4" />
@@ -299,16 +343,19 @@ export default function ProductsPage() {
                   📦 Set Stok
                 </button> */}
               </div>
-
             </div>
           );
         })}
 
-        {filteredProducts.length === 0 && (
+        {filteredProducts?.length === 0 && (
           <div className="col-span-full bg-white border border-dashed border-gray-200 rounded-3xl p-12 text-center">
-            <span className="text-3xl block mb-2">☕</span>
-            <h4 className="text-sm font-bold text-gray-700">Menu tidak ditemukan</h4>
-            <p className="text-xs text-gray-400 mt-1">Coba periksa kembali ejaan atau ganti filter kategori produk Anda.</p>
+            <span className="text-3xl block mb-2"></span>
+            <h4 className="text-sm font-bold text-gray-700">
+              Menu tidak ditemukan
+            </h4>
+            <p className="text-xs text-gray-400 mt-1">
+              Coba periksa kembali ejaan atau ganti filter kategori produk Anda.
+            </p>
           </div>
         )}
       </div>
@@ -334,6 +381,8 @@ export default function ProductsPage() {
                 <h3 className="font-black text-gray-800 text-lg tracking-tight mt-2">
                   Informasi Produk
                 </h3>
+                <p className="text-gray-400">Jika brand anda buka kopi, maka pilihan tipe produk yang sesuai</p>
+                <span className="text-[12px] font-bold text-gray-400">Contoh Jus/Air Mineral: non coffee, Kentang Goreng: Snacks</span>
               </div>
               <button
                 type="button"
@@ -369,9 +418,7 @@ export default function ProductsPage() {
                   type="number"
                   required
                   placeholder="Ex: 15000"
-                  value={
-                    newProduct.price === 0 ? "" : newProduct.price
-                  }
+                  value={newProduct.price === 0 ? "" : newProduct.price}
                   onChange={(e) =>
                     setNewProduct({
                       ...newProduct,
@@ -387,23 +434,23 @@ export default function ProductsPage() {
                 </label>
                 <select
                   onChange={(e) => {
-                    e.preventDefault()
+                    e.preventDefault();
                     setNewProduct({
                       ...newProduct,
                       type: e.target.value,
-                    })
+                    });
                   }}
                   defaultValue=""
                   className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium text-gray-700 focus:outline-none focus:border-[#0F766E]"
                 >
-                  <option value="" disabled>── Pilih Jenis Produk ──</option>
-                  {['coffee', 'non_coffee', 'snacks']
-                    .map((master) => (
-                      <option key={master} value={master}>
-                        {master}
-                      </option>
-                    ))
-                  }
+                  <option value="" disabled>
+                    ── Pilih Jenis Produk ──
+                  </option>
+                  {["coffee", "non_coffee", "snacks"].map((master) => (
+                    <option key={master} value={master}>
+                      {master}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -412,23 +459,23 @@ export default function ProductsPage() {
                 </label>
                 <select
                   onChange={(e) => {
-                    e.preventDefault()
+                    e.preventDefault();
                     setNewProduct({
                       ...newProduct,
                       size: e.target.value,
-                    })
+                    });
                   }}
                   defaultValue=""
                   className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium text-gray-700 focus:outline-none focus:border-[#0F766E]"
                 >
-                  <option value="" disabled>── Pilih Jenis Ukuran ──</option>
-                  {['small', 'regular', 'large']
-                    .map((master) => (
-                      <option key={master} value={master}>
-                        {master}
-                      </option>
-                    ))
-                  }
+                  <option value="" disabled>
+                    ── Pilih Jenis Ukuran ──
+                  </option>
+                  {["small", "regular", "large"].map((master) => (
+                    <option key={master} value={master}>
+                      {master}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -511,9 +558,7 @@ export default function ProductsPage() {
                   type="number"
                   required
                   placeholder="Ex: 15000"
-                  value={
-                    editProduct.price === 0 ? "" : editProduct.price
-                  }
+                  value={editProduct.price === 0 ? "" : editProduct.price}
                   onChange={(e) =>
                     setEditProduct({
                       ...editProduct,
@@ -529,23 +574,23 @@ export default function ProductsPage() {
                 </label>
                 <select
                   onChange={(e) => {
-                    e.preventDefault()
+                    e.preventDefault();
                     setEditProduct({
                       ...editProduct,
-                      type: e.target.value as Product['type'],
-                    })
+                      type: e.target.value as Product["type"],
+                    });
                   }}
                   defaultValue={editProduct.type}
                   className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium text-gray-700 focus:outline-none focus:border-[#0F766E]"
                 >
-                  <option value="" disabled>── Pilih Jenis Produk ──</option>
-                  {['coffee', 'non_coffee', 'snacks']
-                    .map((master) => (
-                      <option key={master} value={master}>
-                        {master}
-                      </option>
-                    ))
-                  }
+                  <option value="" disabled>
+                    ── Pilih Jenis Produk ──
+                  </option>
+                  {["coffee", "non_coffee", "snacks"].map((master) => (
+                    <option key={master} value={master}>
+                      {master}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -554,23 +599,23 @@ export default function ProductsPage() {
                 </label>
                 <select
                   onChange={(e) => {
-                    e.preventDefault()
+                    e.preventDefault();
                     setEditProduct({
                       ...editProduct,
                       size: e.target.value,
-                    })
+                    });
                   }}
                   defaultValue={editProduct.size}
                   className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium text-gray-700 focus:outline-none focus:border-[#0F766E]"
                 >
-                  <option value="" disabled>── Pilih Jenis Ukuran ──</option>
-                  {['small', 'regular', 'large']
-                    .map((master) => (
-                      <option key={master} value={master}>
-                        {master}
-                      </option>
-                    ))
-                  }
+                  <option value="" disabled>
+                    ── Pilih Jenis Ukuran ──
+                  </option>
+                  {["small", "regular", "large"].map((master) => (
+                    <option key={master} value={master}>
+                      {master}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -599,6 +644,7 @@ export default function ProductsPage() {
           </form>
         </div>
       )}
+      <Toaster />
     </div>
   );
 }

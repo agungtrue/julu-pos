@@ -5,7 +5,7 @@ import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { endpoints } from "../../../config/enpoints";
 import api from "../../../lib/api";
 import DashboardSkeleton from "@/components/DashboardSkeleton";
-import { Package, CalculatorIcon, Edit, Plus, Save } from 'lucide-react';
+import { Package, CalculatorIcon, Edit, Plus, Save } from "lucide-react";
 
 interface Ingredient {
   id: string;
@@ -14,12 +14,14 @@ interface Ingredient {
   purchase_cost: number;
   unit: "GRAM" | "ML" | "PCS";
   cost_per_unit: number;
+  stock: number;
+  minimumStock: number;
 }
 
 interface RecipeIngredient {
   id: string;
   ingredient_id: string;
-  ingredient: Ingredient
+  ingredient: Ingredient;
   qty_used: number;
   unit: string;
   sub_total_cost: number;
@@ -45,12 +47,16 @@ export default function HppSystemPage() {
     purchase_cost: number;
     conversion_factor: number;
     unit: string;
+    stock: number;
+    minimumStock: number;
     ingredientsBreakdown: RecipeIngredient[];
   }>({
     name: "",
     purchase_cost: 0,
     conversion_factor: 0,
     unit: "",
+    stock: 0,
+    minimumStock: 0,
     ingredientsBreakdown: [],
   });
 
@@ -60,6 +66,8 @@ export default function HppSystemPage() {
     purchase_cost: number;
     conversion_factor: number;
     unit: string;
+    stock: number;
+    minimumStock: number;
     ingredientsBreakdown: RecipeIngredient[];
   }>({
     id: "",
@@ -67,6 +75,8 @@ export default function HppSystemPage() {
     purchase_cost: 0,
     conversion_factor: 0,
     unit: "",
+    stock: 0,
+    minimumStock: 0,
     ingredientsBreakdown: [],
   });
 
@@ -77,21 +87,23 @@ export default function HppSystemPage() {
     const url = endpoints.ingredients.get;
     const response = await api.get(url);
 
-    return response?.data?.data?.[0];
+    return response?.data?.data?.[0] || [];
   };
 
   const { data: ingredientsData, isLoading: isLoadingIngredients } = useQuery({
-    queryKey: ['ingredientsData'],
+    queryKey: ["ingredientsData"],
     queryFn: fetchIngredientsData,
   });
 
-  console.log({ isLoadingIngredients, ingredientsData })
+  // console.log({ isLoadingIngredients, ingredientsData })
 
   interface SaveIngredientsPayload {
     name: string;
     purchase_cost: number;
     conversion_factor: number;
     unit: string;
+    stock: number;
+    minimumStock: number;
   }
 
   interface UpdateIngredientsPayload {
@@ -100,6 +112,8 @@ export default function HppSystemPage() {
     purchase_cost: number;
     conversion_factor: number;
     unit: string;
+    stock: number;
+    minimumStock: number;
   }
 
   // post ingredients
@@ -108,10 +122,10 @@ export default function HppSystemPage() {
       return await api.post(endpoints.ingredients.post, payload);
     },
     onSuccess: () => {
-      setIsAddBahanBakuModalOpen(false)
+      setIsAddBahanBakuModalOpen(false);
       setIsSaving(false);
 
-      queryClient.invalidateQueries({ queryKey: ['ingredientsData'] });
+      queryClient.invalidateQueries({ queryKey: ["ingredientsData"] });
     },
   });
 
@@ -121,39 +135,38 @@ export default function HppSystemPage() {
       return await api.patch(endpoints.ingredients.patch(payload.id), payload);
     },
     onSuccess: () => {
-      setIsEditBahanBakuModalOpen(false)
+      setIsEditBahanBakuModalOpen(false);
       setIsSaving(false);
 
-      queryClient.invalidateQueries({ queryKey: ['ingredientsData'] });
-      queryClient.invalidateQueries({ queryKey: ['productsData'] });
+      queryClient.invalidateQueries({ queryKey: ["ingredientsData"] });
+      queryClient.invalidateQueries({ queryKey: ["productData", "cogs"] });
     },
   });
 
-  const ingredients = ingredientsData
+  const ingredients = ingredientsData;
 
   // get products
   const fetchProductsData = async () => {
     const url = endpoints.products.getWithIngredients;
 
     const response = await api.get(url);
-    return response?.data?.data;
+    return response?.data?.data || [];
   };
 
   const { data: productsData, isLoading: isLoadingProducts } = useQuery({
-    queryKey: ['productsData'],
+    queryKey: ["productData", "cogs"],
     queryFn: fetchProductsData,
   });
-
 
   const recipes = productsData?.map((data: RecipeItem) => {
     const map = {
       ...data,
-      ingredientsBreakdown: data.productIngredients ?? []
-    }
-    return map
-  })
+      ingredientsBreakdown: data.productIngredients ?? [],
+    };
+    return map;
+  });
 
-  console.log({ recipes })
+  // console.log({ recipes })
 
   interface SaveRecipePayload {
     product_id: number;
@@ -169,7 +182,7 @@ export default function HppSystemPage() {
       return await api.post(endpoints.ingredients.recipe.post, payload);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['productsData'] });
+      queryClient.invalidateQueries({ queryKey: ["productData", "cogs"] });
 
       // Tutup modal dengan sukses
       setIsModalOpen(false);
@@ -182,10 +195,11 @@ export default function HppSystemPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   // const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isAddBahanBakuModalOpen, setIsAddBahanBakuModalOpen] = useState(false);
-  const [isEditBahanBakuModalOpen, setIsEditBahanBakuModalOpen] = useState(false);
+  const [isEditBahanBakuModalOpen, setIsEditBahanBakuModalOpen] =
+    useState(false);
   const [editingRecipe, setEditingRecipe] = useState<RecipeItem | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [selectedNewIngredientId, setSelectedNewIngredientId] = useState('');
+  const [selectedNewIngredientId, setSelectedNewIngredientId] = useState("");
 
   const formatIDR = (num: number) => {
     return new Intl.NumberFormat("id-ID", {
@@ -209,7 +223,9 @@ export default function HppSystemPage() {
   const handleQtyChange = (ingredientId: string, newQty: number) => {
     if (!editingRecipe) return;
 
-    const targetIngredient = ingredients.find((i: Ingredient) => i.id === ingredientId);
+    const targetIngredient = ingredients.find(
+      (i: Ingredient) => i.id === ingredientId,
+    );
     const costPerUnit = targetIngredient ? targetIngredient.cost_per_unit : 0;
 
     const updatedBreakdown = editingRecipe?.ingredientsBreakdown.map((item) => {
@@ -224,7 +240,7 @@ export default function HppSystemPage() {
       return item;
     });
 
-    console.log({ handleQtyChange_updatedBreakdown: updatedBreakdown })
+    // console.log({ handleQtyChange_updatedBreakdown: updatedBreakdown })
 
     setEditingRecipe({
       ...editingRecipe,
@@ -239,51 +255,55 @@ export default function HppSystemPage() {
 
     setIsSaving(true);
 
-    console.log({ editingRecipe })
+    console.log({ editingRecipe });
 
     handleSaveRecipe({
       product_id: editingRecipe.id,
-      ingredients: editingRecipe.ingredientsBreakdown.map(data => {
-        return { ingredient_id: data.ingredient_id, qty_used: data.qty_used }
-      })
-    })
+      ingredients: editingRecipe.ingredientsBreakdown.map((data) => {
+        return { ingredient_id: data.ingredient_id, qty_used: data.qty_used };
+      }),
+    });
   };
 
-  function createRandomStringId(prefix: string = 'temp'): string {
+  function createRandomStringId(prefix: string = "temp"): string {
     const randomStr = Math.random().toString(36).substring(2, 9);
     const timestampStr = Date.now().toString(36);
-    
+
     return `${prefix}-${randomStr}-${timestampStr}`;
   }
 
   const handleAddIngredient = (e: React.FormEvent) => {
-      e.preventDefault();
-      if (!editingRecipe) return;
+    e.preventDefault();
+    if (!editingRecipe) return;
 
-      // console.log({selectedNewIngredientId})
+    // console.log({selectedNewIngredientId})
 
-      const targetMaster = ingredientsData.find((m: Ingredient) => m.id === selectedNewIngredientId);
-      // console.log({ targetMaster, editingRecipe })
-      if (!targetMaster) return;
+    const targetMaster = ingredientsData.find(
+      (m: Ingredient) => m.id === selectedNewIngredientId,
+    );
+    // console.log({ targetMaster, editingRecipe })
+    if (!targetMaster) return;
 
-      const newIngredientRow = {
-        id: createRandomStringId('ing'),
-        ingredient_id: targetMaster.id,
-        ingredient: targetMaster,
-        product_id: editingRecipe?.id,
-        qty_used: 0,
-        unit: targetMaster.unit || "GRAM",
-        sub_total_cost: 0,
-      };
+    const newIngredientRow = {
+      id: createRandomStringId("ing"),
+      ingredient_id: targetMaster.id,
+      ingredient: targetMaster,
+      product_id: editingRecipe?.id,
+      qty_used: 0,
+      unit: targetMaster.unit || "GRAM",
+      sub_total_cost: 0,
+    };
 
-      setEditingRecipe({
-        ...editingRecipe,
-        ingredientsBreakdown: [...editingRecipe.ingredientsBreakdown, newIngredientRow],
-      });
+    setEditingRecipe({
+      ...editingRecipe,
+      ingredientsBreakdown: [
+        ...editingRecipe.ingredientsBreakdown,
+        newIngredientRow,
+      ],
+    });
 
-      setSelectedNewIngredientId('')
-    }
-
+    setSelectedNewIngredientId("");
+  };
 
   const handleOpenAddBahanBakuModalOpen = () => {
     setIsAddBahanBakuModalOpen(true);
@@ -300,7 +320,9 @@ export default function HppSystemPage() {
       name: newRecipe.name,
       purchase_cost: newRecipe.purchase_cost,
       conversion_factor: newRecipe.conversion_factor,
-      unit: newRecipe.unit
+      unit: newRecipe.unit,
+      stock: newRecipe.stock,
+      minimumStock: newRecipe.minimumStock,
     });
   };
 
@@ -313,11 +335,13 @@ export default function HppSystemPage() {
       name: editIngredient.name,
       purchase_cost: editIngredient.purchase_cost,
       conversion_factor: editIngredient.conversion_factor,
-      unit: editIngredient.unit
+      unit: editIngredient.unit,
+      stock: editIngredient.stock,
+      minimumStock: editIngredient.minimumStock,
     });
   };
 
-  if (isLoadingProducts || isLoadingIngredients) return <DashboardSkeleton/>
+  if (isLoadingProducts || isLoadingIngredients) return <DashboardSkeleton />;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300 relative">
@@ -364,69 +388,174 @@ export default function HppSystemPage() {
       {activeTab === "ingredients" && (
         <>
           <button
-            onClick={(handleOpenAddBahanBakuModalOpen)}
+            onClick={handleOpenAddBahanBakuModalOpen}
             className="lex-1 flex gap-2 text-xs font-black text-[#EF5B2B] bg-[#EF5B2B]/5 px-3 py-1.5 rounded-xl hover:bg-[#EF5B2B]/10 transition-colors"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
             Bahan Baku Baru
           </button>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {ingredients.map((ing: Ingredient) => (
-              <div
-                key={ing.id}
-                className="bg-white border border-gray-100 rounded-3xl p-5 shadow-sm"
-              >
-                <h4 className="font-bold text-gray-800 tracking-tight text-sm mb-3">
-                  {ing.name}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {ingredients?.map((ing: Ingredient) => {
+              // 1. Logic Indikator Stok Menipis
+              const isLowStock = Number(ing.stock) <= Number(ing.minimumStock);
+
+              // 2. Kalkulasi % Progress Bar (Berdasarkan rasio terhadap min. stock)
+              const targetRef = Number(ing.minimumStock) * 2 || 100;
+              const stockPercentage = Math.min(
+                Math.round((Number(ing.stock) / targetRef) * 100),
+                100,
+              );
+
+              return (
+                <div
+                  key={ing.id}
+                  className={`bg-white border rounded-2xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between relative overflow-hidden ${
+                    isLowStock
+                      ? "border-red-200 ring-1 ring-red-100"
+                      : "border-gray-100"
+                  }`}
+                >
+                  {/* Strip Merah Atas Jika Stok Menipis */}
+                  {isLowStock && (
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-red-500" />
+                  )}
+
+                  <div>
+                    {/* Header Card: Nama & Badge Status */}
+                    <div className="flex justify-between items-start gap-2 mb-3.5">
+                      <div>
+                        <h4 className="font-bold text-gray-900 tracking-tight text-base">
+                          {ing.name}
+                        </h4>
+                        <span className="text-[11px] font-medium text-gray-400">
+                          Satuan:{" "}
+                          <strong className="text-gray-600">{ing.unit}</strong>
+                        </span>
+                      </div>
+
+                      {/* Badge Status */}
+                      {isLowStock ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-red-50 text-red-600 border border-red-100 animate-pulse shrink-0">
+                          <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                          Stok Menipis
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-[#0A8F8A]/10 text-[#0A8F8A] shrink-0">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#0A8F8A]" />
+                          Aman
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Area Highlight Stok & Progress Bar */}
+                    <div className="bg-gray-50 rounded-xl p-3.5 mb-3.5 border border-gray-100">
+                      <div className="flex justify-between items-baseline mb-1.5">
+                        <span className="text-xs font-semibold text-gray-500">
+                          Sisa Stok:
+                        </span>
+                        <div className="text-right">
+                          <span
+                            className={`text-base font-extrabold ${
+                              isLowStock ? "text-red-600" : "text-gray-900"
+                            }`}
+                          >
+                            {ing.stock?.toLocaleString("id-ID")}
+                          </span>
+                          <span className="text-xs font-medium text-gray-400 ml-1">
+                            / min {ing.minimumStock?.toLocaleString("id-ID")}{" "}
+                            {ing.unit}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Visual Progress Bar Stok */}
+                      <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-500 ${
+                            isLowStock ? "bg-red-500" : "bg-[#0A8F8A]"
+                          }`}
+                          style={{ width: `${Math.max(stockPercentage, 4)}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Grid Mini Stat: Harga Grosir & Modal Per Unit */}
+                    <div className="grid grid-cols-2 gap-2 text-xs mb-4">
+                      <div className="bg-gray-50/80 p-2.5 rounded-xl border border-gray-100 flex flex-col justify-between">
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-0.5">
+                          Harga Grosir
+                        </span>
+                        <div>
+                          <span className="font-bold text-gray-800 block">
+                            {formatIDR(ing.purchase_cost)}
+                          </span>
+                          <span className="text-[10px] text-gray-400 block mt-0.5">
+                            Isi: {ing.conversion_factor} {ing.unit}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="bg-[#EF5B2B]/5 p-2.5 rounded-xl border border-[#EF5B2B]/10 flex flex-col justify-between">
+                        <span className="text-[10px] font-bold text-[#EF5B2B] uppercase tracking-wider block mb-0.5">
+                          Cost / {ing.unit}
+                        </span>
+                        <div>
+                          <span className="font-black text-[#EF5B2B] font-mono text-sm block">
+                            {formatIDR(ing.cost_per_unit)}
+                          </span>
+                          <span className="text-[10px] text-[#EF5B2B]/70 block mt-0.5">
+                            Modal Racikan
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Tombol Aksi Full Width */}
+                  <div className="pt-3 border-t border-gray-100">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsEditBahanBakuModalOpen(true);
+                        setEditIngredient({ ...editIngredient, ...ing });
+                      }}
+                      className="w-full flex justify-center items-center gap-2 bg-gray-50 hover:bg-[#0A8F8A] text-gray-600 hover:text-white font-bold py-2.5 px-4 rounded-xl text-xs uppercase tracking-wider transition-all duration-200 border border-gray-200 hover:border-[#0A8F8A] shadow-none"
+                    >
+                      <Edit className="w-3.5 h-3.5" />
+                      Edit Bahan Baku
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Empty State jika data kosong */}
+            {ingredients?.length === 0 && (
+              <div className="col-span-full bg-white border border-dashed border-gray-200 rounded-3xl p-12 text-center">
+                <div className="w-12 h-12 rounded-full bg-gray-50 text-gray-400 flex items-center justify-center mx-auto mb-3">
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+                    />
+                  </svg>
+                </div>
+                <h4 className="text-sm font-bold text-gray-800">
+                  Bahan Baku tidak ditemukan
                 </h4>
-                <div className="space-y-2 text-xs font-medium text-gray-500">
-                  <div className="flex justify-between">
-                    <span>Harga Grosir:</span>
-                    <span className="text-gray-800 font-bold">
-                      {formatIDR(ing.purchase_cost)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Volume:</span>
-                    <span className="text-gray-700 font-semibold">
-                      {ing.conversion_factor} {ing.unit}
-                    </span>
-                  </div>
-                </div>
-                <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400">
-                    Cost Per {ing.unit}:
-                  </span>
-                  <span className="text-sm font-black text-[#EF5B2B] font-mono bg-[#EF5B2B]/5 px-2.5 py-1 rounded-xl">
-                    {formatIDR(ing.cost_per_unit)}
-                  </span>
-                </div>
-                <div className="grid grid-cols-3 gap-3 pt-4 border-t border-gray-100">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsEditBahanBakuModalOpen(true)
-                      setEditIngredient({ ...editIngredient, ...ing })
-                    }}
-                    className="flex flex-1 gap-2 justify-center items-center col-span-1 border border-gray-200 text-gray-500 font-bold py-3 rounded-xl text-xs uppercase tracking-wider"
-                  >
-                    <Edit className="w-4 h-4" />
-                    Edit
-                  </button>
-                  {/* <button
-                    type="submit"
-                    disabled={isSaving}
-                    className="col-span-2 bg-[#EF5B2B] text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wider shadow-lg shadow-[#EF5B2B]/10 hover:bg-opacity-95 flex items-center justify-center gap-2"
-                  >
-                    {isSaving ? (
-                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                    ) : (
-                      "Submit"
-                    )}
-                  </button> */}
-                </div>
+                <p className="text-xs text-gray-400 mt-1 max-w-sm mx-auto">
+                  Belum ada bahan baku yang ditambahkan atau kata kunci
+                  pencarian Anda tidak cocok.
+                </p>
               </div>
-            ))}
+            )}
           </div>
         </>
       )}
@@ -441,7 +570,7 @@ export default function HppSystemPage() {
             ➕ Racik Resep Baru
             </button> */}
           <div className="space-y-6">
-            {recipes.map((recipe: RecipeItem) => {
+            {recipes?.map((recipe: RecipeItem) => {
               const totalHpp = getRecipeTotalHpp(recipe.ingredientsBreakdown);
               const grossProfit = recipe.price - totalHpp;
               const marginPercentage = (
@@ -526,6 +655,18 @@ export default function HppSystemPage() {
                 </div>
               );
             })}
+
+            {recipes?.length === 0 && (
+              <div className="col-span-full bg-white border border-dashed border-gray-200 rounded-3xl p-12 text-center">
+                <span className="text-3xl block mb-2"></span>
+                <h4 className="text-sm font-bold text-gray-700">
+                  Formula resep tidak ditemukan
+                </h4>
+                <p className="text-xs text-gray-400 mt-1">
+                  Coba periksa kembali
+                </p>
+              </div>
+            )}
           </div>
         </>
       )}
@@ -576,40 +717,45 @@ export default function HppSystemPage() {
                 <label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">
                   Tambah Komponen Bahan Baku
                 </label>
-                
+
                 <div className="flex gap-2">
                   <select
                     onChange={(e) => {
-                      e.preventDefault()
-                      setSelectedNewIngredientId(e.target.value)
+                      e.preventDefault();
+                      setSelectedNewIngredientId(e.target.value);
                     }}
                     defaultValue=""
                     className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium text-gray-700 focus:outline-none focus:border-[#0F766E]"
                   >
-                    <option value="" disabled>── Pilih Bahan Baku ──</option>
-                    
+                    <option value="" disabled>
+                      ── Pilih Bahan Baku ──
+                    </option>
+
                     {/* Filter: Hanya tampilkan bahan yang BELUM dimasukkan ke resep */}
                     {ingredientsData
-                      ?.filter((master: Ingredient) => !editingRecipe?.ingredientsBreakdown.some(item => item.ingredient_id === master.id))
+                      ?.filter(
+                        (master: Ingredient) =>
+                          !editingRecipe?.ingredientsBreakdown.some(
+                            (item) => item.ingredient_id === master.id,
+                          ),
+                      )
                       .map((master: Ingredient) => (
                         <option key={master.id} value={master.id}>
                           {master.name} ({master.unit})
                         </option>
-                      ))
-                    }
+                      ))}
                   </select>
 
-                 
-
                   {!selectedNewIngredientId ? (
-                      ''
-                    ) : (
-                      <div className="flex items-center justify-center bg-teal-50 text-[#0F766E] rounded-xl px-4 text-xs font-black uppercase tracking-wider cursor-pointer"
-                        onClick={handleAddIngredient}
-                      >
-                        + Add
-                      </div>
-                    )}
+                    ""
+                  ) : (
+                    <div
+                      className="flex items-center justify-center bg-teal-50 text-[#0F766E] rounded-xl px-4 text-xs font-black uppercase tracking-wider cursor-pointer"
+                      onClick={handleAddIngredient}
+                    >
+                      + Add
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -623,7 +769,7 @@ export default function HppSystemPage() {
                 >
                   <div className="space-y-0.5">
                     <h5 className="font-bold text-xs text-gray-700">
-                      {item.ingredient?.name || ''}
+                      {item.ingredient?.name || ""}
                     </h5>
                     <span className="text-[10px] text-gray-400 font-mono">
                       Biaya Terhitung:{" "}
@@ -828,6 +974,42 @@ export default function HppSystemPage() {
                   className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#0F766E] font-mono font-bold text-gray-800"
                 />
               </div>
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1.5">
+                  Stock
+                </label>
+                <input
+                  type="number"
+                  required
+                  placeholder="Ex: GRAM/ML/PCS"
+                  value={newRecipe.stock}
+                  onChange={(e) =>
+                    setNewRecipe({
+                      ...newRecipe,
+                      stock: Number(e.target.value),
+                    })
+                  }
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#0F766E] font-mono font-bold text-gray-800"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1.5">
+                  Minimum Stock
+                </label>
+                <input
+                  type="number"
+                  required
+                  placeholder="Ex: GRAM/ML/PCS"
+                  value={newRecipe.minimumStock}
+                  onChange={(e) =>
+                    setNewRecipe({
+                      ...newRecipe,
+                      minimumStock: Number(e.target.value),
+                    })
+                  }
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#0F766E] font-mono font-bold text-gray-800"
+                />
+              </div>
             </div>
 
             {/* Action Buttons */}
@@ -901,7 +1083,10 @@ export default function HppSystemPage() {
                   placeholder="Ex: Milk, Beans"
                   value={editIngredient.name}
                   onChange={(e) =>
-                    setEditIngredient({ ...editIngredient, name: e.target.value })
+                    setEditIngredient({
+                      ...editIngredient,
+                      name: e.target.value,
+                    })
                   }
                   className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#0F766E] font-semibold text-gray-800"
                 />
@@ -915,7 +1100,9 @@ export default function HppSystemPage() {
                   required
                   placeholder="Ex: 15000"
                   value={
-                    editIngredient.purchase_cost === 0 ? "" : editIngredient.purchase_cost
+                    editIngredient.purchase_cost === 0
+                      ? ""
+                      : editIngredient.purchase_cost
                   }
                   onChange={(e) =>
                     setEditIngredient({
@@ -961,6 +1148,42 @@ export default function HppSystemPage() {
                     setEditIngredient({
                       ...editIngredient,
                       unit: e.target.value,
+                    })
+                  }
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#0F766E] font-mono font-bold text-gray-800"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1.5">
+                  Stock
+                </label>
+                <input
+                  type="number"
+                  required
+                  placeholder="Ex: 5000"
+                  value={editIngredient.stock}
+                  onChange={(e) =>
+                    setEditIngredient({
+                      ...editIngredient,
+                      stock: Number(e.target.value),
+                    })
+                  }
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#0F766E] font-mono font-bold text-gray-800"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1.5">
+                  Minimum Stock
+                </label>
+                <input
+                  type="number"
+                  required
+                  placeholder="Ex: 1000"
+                  value={editIngredient.minimumStock}
+                  onChange={(e) =>
+                    setEditIngredient({
+                      ...editIngredient,
+                      minimumStock: Number(e.target.value),
                     })
                   }
                   className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#0F766E] font-mono font-bold text-gray-800"
