@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { ProductItem, CartItem } from "./types/order.types";
 import { Toaster, toast } from "sonner";
+import { useAuthStore } from "@/stores/authStore";
 
 // later ts strict
 
@@ -31,6 +32,7 @@ export default function CreateOrderPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orderUuid, setOrderUuid] = useState(null);
+  const [customerName, setCustomerName] = useState('Walk-in Customer');
 
   // ==========================================
   // ⚙️ INTERACTIVE LOGIC (STATE HANDLERS)
@@ -82,7 +84,7 @@ export default function CreateOrderPage() {
     const url = endpoints.products.get;
 
     const response = await api.get(url);
-    return response?.data?.data;
+    return response?.data?.data || [];
   };
 
   const { data: productData, isLoading: isLoadingProductData } = useQuery({
@@ -141,6 +143,7 @@ export default function CreateOrderPage() {
       const payload = {
         total,
         payment_method: paymentMethod,
+        customerName,
       };
       return await api.post(endpoints.orders.order.init, payload);
     },
@@ -148,6 +151,7 @@ export default function CreateOrderPage() {
       const uuid = res?.data?.orderUuid;
       setOrderUuid(uuid);
       queryClient.invalidateQueries({ queryKey: ["orderSummaryData"] });
+      queryClient.invalidateQueries({ queryKey: ["orderListData"] });
     },
   });
 
@@ -175,6 +179,8 @@ export default function CreateOrderPage() {
         className:
           "bg-emerald-50 border-emerald-200 text-emerald-800 rounded-xl",
       });
+
+      queryClient.invalidateQueries({ queryKey: ["orderListData"] });
       setOrderUuid(null);
       setCart([]);
       setCashReceived('')
@@ -216,7 +222,7 @@ export default function CreateOrderPage() {
           </span>
           <input
             type="text"
-            placeholder="Cari menu julu cepat..."
+            placeholder="Cari menu..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#0F766E] focus:bg-white transition-colors"
@@ -249,7 +255,7 @@ export default function CreateOrderPage() {
         {/* flex-1 overflow-y-auto pr-1 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 pb-6 scrollbar-thin
         flex-1 overflow-y-auto pr-1 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 content-start gap-4 pb-6 scrollbar-thin */}
         <div className="flex-1 overflow-y-auto pr-1 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 content-start gap-4 pb-6 scrollbar-thin">
-          {filteredProducts.map((product: ProductItem) => {
+          {filteredProducts?.map((product: ProductItem) => {
             const cartItem = cart.find((c) => c.id === product.id);
 
             const isSelected = cartItem ? cartItem.qty : 0;
@@ -288,6 +294,14 @@ export default function CreateOrderPage() {
               </div>
             );
           })}
+
+          {filteredProducts?.length === 0 && (
+          <div className="col-span-full bg-white border border-dashed border-gray-200 rounded-3xl p-12 text-center">
+            <span className="text-3xl block mb-2"></span>
+            <h4 className="text-sm font-bold text-gray-700">Menu tidak ditemukan</h4>
+            <p className="text-xs text-gray-400 mt-1">Coba periksa kembali ejaan atau ganti filter kategori produk Anda.</p>
+          </div>
+        )}
         </div>
       </div>
 
@@ -309,6 +323,8 @@ export default function CreateOrderPage() {
             </span>
             <input
               type="text"
+              value={customerName}
+              onChange={(e) => setCustomerName(e.target.value)}
               placeholder="Walk-in Customer (Guest)"
               className="w-full pl-8 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#EF5B2B] transition-colors"
             />

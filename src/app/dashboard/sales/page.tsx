@@ -7,6 +7,7 @@ import { formatJuluDate } from "../../../lib/utils";
 import { endpoints } from "../../../config/enpoints";
 import DashboardSkeleton from "@/components/DashboardSkeleton";
 import { Search } from "lucide-react";
+import { useAuthStore } from '@/stores/authStore';
 
 interface TransactionDetail {
   name: string;
@@ -33,9 +34,12 @@ interface Transaction {
   user: User;
   total: number;
   payment_method: "qris" | "cash";
+  customerName: string;
 }
 
 export default function SalesLogPage() {
+  const user = useAuthStore((state) => state.user);
+
   const [filterMethod, setFilterMethod] = useState<"ALL" | "qris" | "cash">(
     "ALL",
   );
@@ -132,8 +136,8 @@ export default function SalesLogPage() {
             Log Transaksi Penjualan
           </h1>
           <p className="text-xs text-gray-400 mt-1 font-medium uppercase tracking-wider">
-            Aliran data real-time tersinkronisasi langsung dari Julu POS Mobile
-            App
+            {/* Aliran data real-time tersinkronisasi langsung dari Julu POS Mobile
+            App */}
           </p>
         </div>
         <div className="bg-emerald-50 border border-emerald-100 px-4 py-2.5 rounded-2xl flex items-center gap-2.5 w-fit shadow-sm">
@@ -235,13 +239,18 @@ export default function SalesLogPage() {
           >
             <div className="space-y-1">
               <div className="flex items-center gap-2.5 flex-wrap">
-                <span className="font-mono text-xs font-bold text-gray-800 tracking-tight group-hover:text-[#0F766E] transition-colors">
+                {/* <span className="font-mono text-xs font-bold text-gray-800 tracking-tight group-hover:text-[#0F766E] transition-colors">
                   {tx.id}
-                </span>
+                </span> */}
                 <span
                   className={`text-[9px] font-black tracking-wider uppercase px-2 py-0.5 rounded-md ${tx.payment_method === "qris" ? "bg-[#0F766E]/10 text-[#0F766E]" : "bg-[#EF5B2B]/10 text-[#EF5B2B]"}`}
                 >
                   {tx.payment_method}
+                </span>
+                <span
+                  className={`text-[9px] font-black tracking-wider uppercase px-2 py-0.5 rounded-md bg-[#0A8F8A] text-[#ffffff]`}
+                >
+                  {tx.customerName}
                 </span>
               </div>
               <p className="text-[11px] text-gray-400 font-medium">
@@ -293,7 +302,7 @@ export default function SalesLogPage() {
                 J
               </div>
               <h3 className="font-black text-gray-800 text-sm uppercase tracking-wide">
-                Julu Coffee & Snacks
+                {user?.tenant?.name || ''}
               </h3>
               <p className="text-[10px] text-gray-400 font-mono mt-0.5">
                 {selectedTx.invoiceNumber}
@@ -343,7 +352,7 @@ export default function SalesLogPage() {
 
             {/* Penghitungan Finansial (Kalkulasi Diskon & Metode Bayar) */}
             <div className="border-t border-dashed border-gray-200 pt-4 mt-4 space-y-2 text-xs font-medium font-mono text-gray-500">
-              <div className="flex justify-between">
+              {/* <div className="flex justify-between">
                 <span>Subtotal KOTOR:</span>
                 <span className="text-gray-700 font-bold">
                   {formatIDR(
@@ -353,7 +362,7 @@ export default function SalesLogPage() {
                     ),
                   )}
                 </span>
-              </div>
+              </div> */}
 
               {/* {selectedTx.discountAmount > 0 && (
                 <div className="flex justify-between text-[#EF5B2B]">

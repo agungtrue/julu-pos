@@ -1,5 +1,10 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.julucoffee.com';
-// console.log({ env: process.env.NEXT_PUBLIC_API_URL, baseUrl: BASE_URL })
+let BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.julucoffee.com';
+console.log({ api: process.env.NEXT_PUBLIC_API_URL, baseUrl: BASE_URL, env: process.env.NODE_ENV })
+
+if (process.env.NODE_ENV === 'development') {
+  BASE_URL = 'http://julu-pos.localhost:3006'
+}
+
 export const endpoints = {
   auth: {
     login: `${BASE_URL}/auth/login`,
@@ -33,5 +38,34 @@ export const endpoints = {
     get: `${BASE_URL}/products`,
     post: `${BASE_URL}/products`,
     patch: (id: string) => `${BASE_URL}/products/${id}`,
+  },
+  users: {
+    get: `${BASE_URL}/users`,
+    post: `${BASE_URL}/users`,
+    patch: (id: string) => `${BASE_URL}/users/${id}`,
+    my: `${BASE_URL}/users/my`,
+    changePassword: `${BASE_URL}/users/change-password`,
+  },
+  tenants: {
+    get: `${BASE_URL}/tenants`,
+    post: `${BASE_URL}/tenants`,
+    patch: (id: string) => `${BASE_URL}/tenants/${id}`,
+  },
+  opex: {
+    get: `${BASE_URL}/opex`,
+    post: `${BASE_URL}/opex`,
+    patch: (id: string) => `${BASE_URL}/opex/${id}`,
+    delete: (id: string) => `${BASE_URL}/opex/${id}`,
+  },
+  subscriptions: {
+    plans: `${BASE_URL}/subscription-plans`,
+    checkout: `${BASE_URL}/subscription-invoices/checkout`,
+    activePending: `${BASE_URL}/subscription-invoices/active-pending`,
+    invoiceDetail: (invoiceNumber: string) => `${BASE_URL}/subscription-invoices/detail/${invoiceNumber}`,
+    invoiceList: `${BASE_URL}/subscription-invoices/admin/invoice-list`,
+    approve: (invoiceId: string) => `${BASE_URL}/subscription-invoices/${invoiceId}/approve`,
+    admin: {
+      dashboarStats: `${BASE_URL}/subscription-invoices/admin/dashboard-stats`,
+    }
   }
 };
