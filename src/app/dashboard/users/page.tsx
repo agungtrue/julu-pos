@@ -150,7 +150,8 @@ export default function UserManagementPage() {
             Manajemen Karyawan
           </h1>
           <p className="text-xs text-gray-750 font-semibold mt-1 leading-relaxed">
-            Pantau performa nota, riwayat masuk, dan kendali penuh hak akses
+            {/* Pantau performa nota, riwayat masuk, dan kendali penuh hak akses */}
+            Daftar pengguna
             kasir Julu POS.
           </p>
         </div>

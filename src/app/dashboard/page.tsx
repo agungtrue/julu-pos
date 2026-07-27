@@ -9,19 +9,20 @@ import DashboardSkeleton from "@/components/DashboardSkeleton";
 import { useAuthStore } from "@/stores/authStore";
 import { LowStockModal } from "@/components/LowStockModal";
 import { getPeriodLabel } from "@/lib/utils";
+import ScrollToTop from "@/components/ScrollToTop";
 
 export default function DashboardPage() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
 
   const [timeFilter, setTimeFilter] = useState<
-    "today" | "month" | "yesterday" | "last_month"
+    "today" | "month" | "yesterday" | "last_month" | "custom"
   >("today");
 
   const [currentFilterDate, setCurrentFilterDate] = useState({
-    startDate: '',
-    endDate: '',
-  })
+    startDate: "",
+    endDate: "",
+  });
 
   const getDateParamsForThisMonth = () => {
     const today = new Date();
@@ -78,7 +79,7 @@ export default function DashboardPage() {
   };
 
   const fetchSummaryData = async (
-    filter: "today" | "month" | "yesterday" | "last_month",
+    filter: "today" | "month" | "yesterday" | "last_month" | 'custom',
   ) => {
     let url = endpoints.orders.summary.get;
 
@@ -119,6 +120,15 @@ export default function DashboardPage() {
     );
   }
 
+  const getRemainingDays = (endDate?: string) => {
+    if (!endDate) return 0;
+    const end = new Date(endDate).getTime();
+    const now = new Date().getTime();
+    const diffTime = end - now;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 0;
+  };
+
   //   return <DashboardSkeleton/>
   if (isLoading) return <DashboardSkeleton />;
 
@@ -140,10 +150,7 @@ export default function DashboardPage() {
             Halo {user?.name} - Ringkasan Performa
           </h1>
           <p className="text-xs text-gray-400 font-medium mt-1">
-            PERIODE LAPORAN:{" "}
-            {getPeriodLabel(timeFilter)}
-              {" "}
-            • {user?.tenant?.name}
+            PERIODE LAPORAN: {getPeriodLabel(timeFilter)} • {user?.tenant?.name}
           </p>
         </div>
         <div className="bg-white border border-gray-200 px-4 py-2.5 rounded-2xl flex items-center gap-3 w-fit shadow-sm">
@@ -156,51 +163,98 @@ export default function DashboardPage() {
           </span>
         </div>
       </div>
-      <div className="flex items-center bg-gray-100 p-1 rounded-xl w-fit self-start sm:self-center">
-        <button
-          onClick={() => setTimeFilter("today")}
-          className={`px-4 cursor-pointer py-2 text-xs font-bold rounded-lg transition-all duration-200 ${
-            timeFilter === "today"
-              ? "bg-white text-teal-700 shadow-sm"
-              : "text-gray-500 hover:text-gray-800"
-          }`}
-        >
-          Today
-        </button>
-        <button
-          onClick={() => setTimeFilter("yesterday")}
-          className={`px-4 cursor-pointer py-2 text-xs font-bold rounded-lg transition-all duration-200 ${
-            timeFilter === "yesterday"
-              ? "bg-white text-teal-700 shadow-sm"
-              : "text-gray-500 hover:text-gray-800"
-          }`}
-        >
-          Yesterday
-        </button>
-        <button
-          onClick={() => setTimeFilter("month")}
-          className={`px-4 cursor-pointer py-2 text-xs font-bold rounded-lg transition-all duration-200 ${
-            timeFilter === "month"
-              ? "bg-white text-teal-700 shadow-sm"
-              : "text-gray-500 hover:text-gray-800"
-          }`}
-        >
-          This Month
-        </button>
-        <button
-          onClick={() => setTimeFilter("last_month")}
-          className={`px-4 cursor-pointer py-2 text-xs font-bold rounded-lg transition-all duration-200 ${
-            timeFilter === "last_month"
-              ? "bg-white text-teal-700 shadow-sm"
-              : "text-gray-500 hover:text-gray-800"
-          }`}
-        >
-          Last Month
-        </button>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 w-full my-4">
+        {/* 1. LEFT SIDE: TIME FILTER + DATE PICKER */}
+        <div className="flex flex-wrap items-center bg-gray-100 p-1 rounded-xl w-fit self-start sm:self-center gap-0.5">
+          <button
+            onClick={() => setTimeFilter("today")}
+            className={`px-4 cursor-pointer py-2 text-xs font-bold rounded-lg transition-all duration-200 ${
+              timeFilter === "today"
+                ? "bg-white text-teal-700 shadow-sm"
+                : "text-gray-500 hover:text-gray-800"
+            }`}
+          >
+            Hari Ini
+          </button>
+
+          <button
+            onClick={() => setTimeFilter("yesterday")}
+            className={`px-4 cursor-pointer py-2 text-xs font-bold rounded-lg transition-all duration-200 ${
+              timeFilter === "yesterday"
+                ? "bg-white text-teal-700 shadow-sm"
+                : "text-gray-500 hover:text-gray-800"
+            }`}
+          >
+            Kemarin
+          </button>
+
+          <button
+            onClick={() => setTimeFilter("month")}
+            className={`px-4 cursor-pointer py-2 text-xs font-bold rounded-lg transition-all duration-200 ${
+              timeFilter === "month"
+                ? "bg-white text-teal-700 shadow-sm"
+                : "text-gray-500 hover:text-gray-800"
+            }`}
+          >
+            Bulan Ini
+          </button>
+
+          <button
+            onClick={() => setTimeFilter("last_month")}
+            className={`px-4 cursor-pointer py-2 text-xs font-bold rounded-lg transition-all duration-200 ${
+              timeFilter === "last_month"
+                ? "bg-white text-teal-700 shadow-sm"
+                : "text-gray-500 hover:text-gray-800"
+            }`}
+          >
+            Bulan Lalu
+          </button>
+
+          {/* 💡 2. CUSTOM DATE PICKER (DI SAMPING LAST MONTH) */}
+          {/* <div className="relative flex items-center ml-1 border-l border-gray-300/60 pl-1">
+            <input
+              type="date"
+                value={customDate || ""}
+              onChange={(e) => {
+                setCustomDate(e.target.value);
+                setTimeFilter("custom");
+              }}
+              className={`px-3 py-1.5 text-xs font-bold rounded-lg cursor-pointer focus:outline-none transition-all duration-200 border-0 ${
+                timeFilter === "custom"
+                  ? "bg-white text-teal-700 shadow-sm"
+                  : "bg-transparent text-gray-500 hover:text-gray-800"
+              }`}
+            />
+          </div> */}
+        </div>
+
+        {/* 💡 3. RIGHT SIDE: BADGE INFO SUBSCRIPTION (POJOK KANAN SELARAS) */}
+        {user?.role === "OWNER_ADMIN" && <div className="flex items-center gap-2.5 bg-gradient-to-r from-teal-50/90 to-emerald-50/80 border border-teal-100/80 px-3.5 py-2 rounded-xl self-end md:self-center shadow-2xs">
+          {/* Indicator Dot (Hijau Pulse) */}
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+
+          <div className="text-xs flex items-center gap-2">
+            <span className="font-extrabold text-teal-900 tracking-tight text-[14px]">
+              {summary?.tenantSubscription?.plan?.name || "-"}
+            </span>
+            <span className="text-gray-300">•</span>
+            <span className="font-bold text-teal-700 bg-teal-100/60 px-2 py-0.5 rounded-md text-[14px]">
+              {/* Misal hitung sisa hari dari endDate */}
+              Sisa {getRemainingDays(
+                summary?.tenantSubscription?.endDate
+              )}{" "}
+              hari lagi
+            </span>
+          </div>
+        </div>}
       </div>
 
       {/* 💰 MAIN FINANCIAL CARDS GRID */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* OWNER_ADMIN */}
+      {user?.role === "OWNER_ADMIN" && <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* CARD 1: REVENUE */}
         <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
           <div>
@@ -308,7 +362,6 @@ export default function DashboardPage() {
               {Math.ceil(summary?.breakEvenRevenue?.targetSnackCount)}
             </h3>
           </div>
-         
         </div>
 
         <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden sm:col-span-2 lg:col-span-1">
@@ -324,7 +377,172 @@ export default function DashboardPage() {
             {/* Sisa target ke profit: <span className="text-red-500 font-bold">{formatIDR(Math.floor(summary?.breakEvenRevenue?.excessRevenueAmount))} lagi</span> */}
           </p>
         </div>
-      </div>
+
+        <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
+          <div>
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+              Cash
+            </span>
+            <h3 className="text-2xl font-black text-[#0F766E] tracking-tight">
+              {formatIDR(summary?.paymentMethods?.amounts?.cash)}
+            </h3>
+          </div>
+
+          <div>
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+              QRIS
+            </span>
+            <h3 className="text-2xl font-black text-[#0F766E] tracking-tight">
+              {formatIDR(summary?.paymentMethods?.amounts?.qris)}
+            </h3>
+          </div>
+        </div>
+      </div>}
+
+      {/* EMPLOYEE */}
+      {user?.role === "EMPLOYEE" && <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* CARD 1: REVENUE */}
+        <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
+          <div>
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+              Total Pendapatan
+            </span>
+            <h3 className="text-2xl font-black text-[#0F766E] tracking-tight">
+              {formatIDR(summary?.revenues)}
+            </h3>
+          </div>
+          <p className="text-xs text-gray-400 font-medium">
+            Rata-rata Harian:{" "}
+            <span className="text-gray-700 font-semibold">
+              {formatIDR(summary?.transactionMetrics.avgRevPerDay)}
+            </span>
+          </p>
+          <p className="text-xs text-gray-400 font-medium">
+            Target:{" "}
+            <span className="text-gray-700 font-semibold">
+              {formatIDR(summary?.breakEvenRevenue.targetAmount)}
+            </span>
+          </p>
+          {/* Target Amount: {formatIDR(summary?.breakEvenRevenue.targetAmount)} */}
+        </div>
+
+        {/* CARD 2: GROSS INCOME */}
+        {/* <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
+          <div>
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+              Keuntungan Kotor (Gross)
+            </span>
+            <h3 className="text-2xl font-black text-gray-800 tracking-tight">
+              {formatIDR(summary?.grossIncomes)}
+            </h3>
+          </div>
+          <p className="text-xs text-[#0F766E] font-bold bg-[#0F766E]/5 px-2.5 py-1 rounded-lg w-fit">
+            Gross Margin: {Math.floor(summary?.marginPercentages?.grossMargin)}%
+          </p>
+        </div> */}
+
+        {/* CARD 3: NET INCOME */}
+        {/* <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden sm:col-span-2 lg:col-span-1">
+          <div>
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+              Pendapatan Bersih (Net)
+            </span>
+            <h3
+              className={`text-2xl font-black tracking-tight ${summary?.netIncomes < 0 ? "text-red-500" : "text-green-600"}`}
+            >
+              {formatIDR(summary?.netIncomes)}
+            </h3>
+          </div>
+          <span className="text-xs text-gray-400 font-medium">
+            {summary?.breakEvenRevenue?.excessRevenueAmount < 0 ? (
+              <>
+                Sisa target ke profit:{" "}
+                <span className="text-red-500 font-bold">
+                  {formatIDR(
+                    Math.floor(summary?.breakEvenRevenue?.excessRevenueAmount),
+                  )}{" "}
+                  lagi
+                </span>
+              </>
+            ) : (
+              <p className="text-xs text-green-600 font-bold bg-[#0F766E]/5 px-2.5 py-1 rounded-lg w-fit">
+                Profitable:{" "}
+                {Math.floor(summary?.breakEvenRevenue?.excessRevenuePercentage)}
+                %
+              </p>
+            )}
+          </span>
+        </div> */}
+
+        <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
+          <div>
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+              Orders
+            </span>
+            <h3 className="text-2xl font-black text-[#0F766E] tracking-tight">
+              {summary?.transactions}
+            </h3>
+          </div>
+          <p className="text-xs text-gray-400 font-medium">
+            {/* Rata-rata Harian: <span className="text-gray-700 font-semibold">{formatIDR(summary?.transactionMetrics.avgRevPerDay)}</span> */}
+          </p>
+        </div>
+
+        <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
+          <div>
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+              Cups/Target Cups
+            </span>
+            <h3 className="text-2xl font-black text-gray-800 tracking-tight">
+              {summary?.cups.total}/
+              {Math.ceil(summary?.breakEvenRevenue?.targetCupsCount)}
+            </h3>
+          </div>
+
+          <div>
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+              Snacks/Target Snacks
+            </span>
+            <h3 className="text-2xl font-black text-gray-800 tracking-tight">
+              {summary?.snacks}/
+              {Math.ceil(summary?.breakEvenRevenue?.targetSnackCount)}
+            </h3>
+          </div>
+        </div>
+
+        <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
+          <div>
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+              Cash
+            </span>
+            <h3 className="text-2xl font-black text-gray-800 tracking-tight">
+              {formatIDR(summary?.paymentMethods?.amounts?.cash)}
+            </h3>
+          </div>
+
+          <div>
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+              QRIS
+            </span>
+            <h3 className="text-2xl font-black text-gray-800 tracking-tight">
+              {formatIDR(summary?.paymentMethods?.amounts?.qris)}
+            </h3>
+          </div>
+        </div>
+
+        {/* <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden sm:col-span-2 lg:col-span-1">
+          <div>
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+              Daily Opex
+            </span>
+            <h3 className={`text-2xl font-black tracking-tight text-red-500`}>
+              {formatIDR(summary?.opex?.dailyAmount)}
+            </h3>
+          </div>
+          <p className="text-xs text-gray-400 font-medium">
+          </p>
+        </div> */}
+      </div>}
 
       {/* Stat Box Trigger untuk Dashboard Grid */}
       <div
@@ -530,6 +748,7 @@ export default function DashboardPage() {
         onClose={() => setIsLowStockModalOpen(false)}
         stockAlerts={summary?.stockAlerts || []}
       />
+      <ScrollToTop />
     </div>
   );
 }

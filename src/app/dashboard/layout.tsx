@@ -93,7 +93,7 @@ export default function DashboardLayout({
                 <Link
                   key={item.path}
                   href={item.path}
-                  onClick={() => setIsOpen(false)} // Tutup drawer otomatis di mobile jika link diklik
+                  onClick={() => setIsOpen(false)}
                   className={`
                     flex items-center gap-4 px-4 py-3.5 rounded-xl text-sm font-semibold tracking-wide transition-all
                     ${isActive 
@@ -115,6 +115,7 @@ export default function DashboardLayout({
         <div className="border-t border-white/10 pt-6 mt-6">
           <div className="flex items-center gap-3.5 mb-5 px-2 cursor-pointer" onClick={(e) => {
             e.preventDefault()
+            setIsOpen(false)
             router.push('/dashboard/my');
           }}>
             <div className="w-10 h-10 rounded-xl bg-[#F59E0B] text-white font-bold flex items-center justify-center text-sm shadow-sm">

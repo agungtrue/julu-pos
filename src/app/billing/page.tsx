@@ -3,10 +3,11 @@
 import React, { useState, useEffect } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/stores/authStore";
 import api from "../../lib/api";
 import { endpoints } from "../../config/enpoints";
 import { MismatchDomainModal } from "@/components/MismatchDomainModal";
-import axios from 'axios'
+import axios from "axios";
 interface CheckoutResponse {
   invoice: {
     id: string;
@@ -23,16 +24,23 @@ interface CheckoutResponse {
 
 export default function SubscriptionExpiredPage() {
   const router = useRouter();
+  const user = useAuthStore((state) => state.user);
+  console.log({ user });
   const [selectedPackage, setSelectedPackage] = useState("3_MONTHS");
   const [mismatchData, setMismatchData] = useState({
-    currentDomain: '',
-    targetDomain: '',
-    targetUrl: '',
+    currentDomain: "",
+    targetDomain: "",
+    targetUrl: "",
   });
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // 1. SMART CHECK: Cek apakah user sebenarnya punya invoice PENDING yang belum dibayar
-  const { data: pendingInvoice, isLoading: isCheckingPending, isError, error: activePendingInvoiceError } = useQuery({
+  const {
+    data: pendingInvoice,
+    isLoading: isCheckingPending,
+    isError,
+    error: activePendingInvoiceError,
+  } = useQuery({
     queryKey: ["activePendingInvoice"],
     queryFn: async () => {
       const url = endpoints.subscriptions.activePending;
@@ -43,14 +51,17 @@ export default function SubscriptionExpiredPage() {
     retry: false,
   });
 
-//   console.log({ pendingInvoice, isError, activePendingInvoiceError });
+  //   console.log({ pendingInvoice, isError, activePendingInvoiceError });
 
   useEffect(() => {
     if (isError && axios.isAxiosError(activePendingInvoiceError)) {
       const errorData = activePendingInvoiceError.response?.data;
 
       // Tangkap payload JSON yang kita buat di NestJS Guard tadi
-      if (activePendingInvoiceError.response?.status === 403 && errorData?.code === "TENANT_DOMAIN_MISMATCH") {
+      if (
+        activePendingInvoiceError.response?.status === 403 &&
+        errorData?.code === "TENANT_DOMAIN_MISMATCH"
+      ) {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setMismatchData({
           currentDomain: `${errorData.data.currentSubdomain}.julucoffee.com`,
@@ -83,7 +94,7 @@ export default function SubscriptionExpiredPage() {
 
   const packages = packagesData ?? [];
 
-//   console.log({ packages });
+  //   console.log({ packages });
 
   const activePack =
     packages.find((p: any) => p.id === selectedPackage) || packages[1];
@@ -99,15 +110,15 @@ export default function SubscriptionExpiredPage() {
     },
     onSuccess: (data: CheckoutResponse) => {
       //   setCheckoutData(data);
-      console.log('onSuccess', { data });
+      console.log("onSuccess", { data });
       const { invoiceNumber } = data.invoice;
       window.location.href = `/billing/${invoiceNumber}`;
     },
-    onError: ({data}: any) => {
-      console.log('onError', { data });
+    onError: ({ data }: any) => {
+      console.log("onError", { data });
       if (data?.code === "TENANT_DOMAIN_MISMATCH") {
-        console.log('in...')
-        setIsModalOpen(true)
+        console.log("in...");
+        setIsModalOpen(true);
 
         setMismatchData({
           currentDomain: `${data.currentSubdomain}.julucoffee.com`,
@@ -133,63 +144,59 @@ export default function SubscriptionExpiredPage() {
         </div>
       )}
 
-      <div className="mx-auto text-center p-6 bg-white rounded-2xl border border-gray-100 shadow-sm mb-5">
-        {/* 1. Icon Lock / Status Badge */}
-        <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-orange-100 text-[#EF5B2B] flex items-center justify-center">
-          <svg
-            className="w-6 h-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-            />
-          </svg>
-        </div>
+      {(user?.tenant?.subscriptions as any[])?.[0]?.status === "EXPIRED" && (
+        <div className="mx-auto text-center p-6 bg-white rounded-2xl border border-gray-100 shadow-sm mb-5">
+          <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-orange-100 text-[#EF5B2B] flex items-center justify-center">
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+              />
+            </svg>
+          </div>
 
-        {/* 2. Judul Utama (H1) */}
-        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
-          Akses Kedai Sementara Terkunci
-        </h1>
+          {/* 2. Judul Utama (H1) */}
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+            Akses Kedai Sementara Terkunci
+          </h1>
 
-        {/* 3. Penjelasan Utama (Ganti H3 jadi p/subtext agar tidak membentur H1) */}
-        <p className="mt-2 text-sm text-gray-600 leading-relaxed">
-          Masa aktif langganan Julu POS untuk kedai ini telah berakhir.
-        </p>
-
-        {/* 4. Highlight Reassurance (Bikin User Tenang) */}
-        <div className="mt-4 p-3.5 bg-emerald-50/80 border border-emerald-100 rounded-xl text-left flex items-start space-x-2.5">
-          <span className="text-emerald-600 text-base">🛡️</span>
-          <p className="text-xs text-emerald-900 font-medium leading-relaxed">
-            <span className="font-bold">Tenang!</span> Seluruh data transaksi,
-            stok, dan resep Anda{" "}
-            <span className="underline decoration-emerald-300">
-              tetap tersimpan aman
-            </span>
-            .
+          {/* 3. Penjelasan Utama (Ganti H3 jadi p/subtext agar tidak membentur H1) */}
+          <p className="mt-2 text-sm text-gray-600 leading-relaxed">
+            Masa aktif langganan Julu POS untuk kedai ini telah berakhir.
           </p>
-        </div>
 
-        {/* 5. Call To Action Prompt & Button */}
-        <div className="mt-6">
-          <p className="text-xs font-semibold text-gray-500 mb-3">
-            Yuk, perpanjang langganan sekarang agar kasir bisa kembali mencatat
-            jualan!
-          </p>
-        </div>
-      </div>
+          {/* 4. Highlight Reassurance (Bikin User Tenang) */}
+          <div className="mt-4 p-3.5 bg-emerald-50/80 border border-emerald-100 rounded-xl text-left flex items-start space-x-2.5">
+            <span className="text-emerald-600 text-base">🛡️</span>
+            <p className="text-xs text-emerald-900 font-medium leading-relaxed">
+              <span className="font-bold">Tenang!</span> Seluruh data transaksi,
+              stok, dan resep Anda{" "}
+              <span className="underline decoration-emerald-300">
+                tetap tersimpan aman
+              </span>
+              .
+            </p>
+          </div>
 
-      {/* 💳 CONTAINER UTAMA */}
+          {/* 5. Call To Action Prompt & Button */}
+          <div className="mt-6">
+            <p className="text-xs font-semibold text-gray-500 mb-3">
+              Yuk, perpanjang langganan sekarang agar kasir bisa kembali
+              mencatat jualan!
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="w-full max-w-4xl bg-white rounded-3xl border border-gray-200 shadow-xl overflow-hidden animate-scale-up">
-        {/* ===================================================================== */}
-        {/* STATE 1: SELEKSI PAKET & TOMBOL CHECKOUT (INSTRUKSI BELUM MUNCUL) */}
-        {/* ===================================================================== */}
         <div className="grid grid-cols-1 lg:grid-cols-5">
-          {/* KIRI: PILIHAN PAKET */}
           <div className="lg:col-span-3 p-6 md:p-8 border-b lg:border-b-0 lg:border-r border-gray-100">
             <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-4">
               1. Pilih Paket Perpanjangan
@@ -198,6 +205,12 @@ export default function SubscriptionExpiredPage() {
             <div className="flex flex-col gap-3">
               {packages.map((pkg: any) => {
                 const isChosen = selectedPackage === pkg.id;
+                // Hitung biaya per hari otomatis jika belum ada di data object (Asumsi 1 bulan = 30 hari)
+                const days =
+                  pkg.durationDays ||
+                  (pkg.durationMonths ? pkg.durationMonths * 30 : 30);
+                const dailyCost = pkg.dailyCost || Math.round(pkg.price / days);
+
                 return (
                   <div
                     key={pkg.id}
@@ -205,54 +218,88 @@ export default function SubscriptionExpiredPage() {
                     className={`relative p-4 rounded-2xl border-2 cursor-pointer transition-all flex items-center justify-between ${
                       isChosen
                         ? "border-[#0A8F8A] bg-[#0A8F8A]/5 shadow-md scale-[1.01]"
-                        : "border-gray-200 hover:border-gray-300 hover:bg-gray-50/50"
+                        : pkg.isRecommended
+                          ? "border-amber-300/80 bg-amber-50/20 hover:border-amber-400 hover:bg-amber-50/50"
+                          : "border-gray-200 hover:border-gray-300 hover:bg-gray-50/50"
                     }`}
                   >
-                    <span
-                      className={`absolute -top-2.5 right-4 text-[9px] font-black px-2 py-0.5 rounded-md shadow-sm tracking-wider ${
-                        isChosen
-                          ? "bg-[#EF5B2B] text-white"
-                          : "bg-gray-100 text-gray-500 border border-gray-200"
-                      }`}
-                    >
-                      {pkg.tag}
-                    </span>
+                    {/* 1. BADGES SECTION (TOP RIGHT) */}
+                    <div className="absolute -top-3 right-4 flex items-center gap-1.5">
+                      {/* Badge Rekomendasi Utama */}
+                      {pkg.isRecommended && (
+                        <span className="bg-gradient-to-r from-amber-500 to-[#EF5B2B] text-white text-[9px] font-black px-2.5 py-0.5 rounded-full shadow-sm tracking-wider uppercase flex items-center gap-1 animate-pulse">
+                          <span>⭐</span> Rekomendasi
+                        </span>
+                      )}
 
+                      {/* Tag Hemat / Promo */}
+                      {pkg.tag && (
+                        <span
+                          className={`text-[9px] font-black px-2 py-0.5 rounded-md shadow-sm tracking-wider uppercase ${
+                            isChosen
+                              ? "bg-[#EF5B2B] text-white"
+                              : "bg-gray-100 text-gray-600 border border-gray-200"
+                          }`}
+                        >
+                          {pkg.tag}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* 2. LEFT SIDE: Radio & Package Detail */}
                     <div className="flex items-center gap-3">
                       <input
                         type="radio"
                         name="subscription_pack"
                         checked={isChosen}
                         onChange={() => setSelectedPackage(pkg.id)}
-                        className="w-4 h-4 accent-[#0A8F8A]"
+                        className="w-4 h-4 accent-[#0A8F8A] cursor-pointer"
                       />
                       <div>
                         <p
                           className={`text-sm font-bold ${
-                            isChosen ? "text-[#0A8F8A]" : "text-gray-800"
+                            isChosen ? "text-[#0A8F8A]" : "text-gray-900"
                           }`}
                         >
                           {pkg.name}
                         </p>
-                        <p className="text-xs text-gray-600 mt-0.5">
+
+                        <p className="text-xs text-gray-500 mt-0.5">
                           Durasi Aktif:{" "}
                           <span className="font-bold text-gray-800">
                             {pkg.duration}
                           </span>
                         </p>
+
+                        {/* 💡 BIAYA PER HARI HIGHLIGHT */}
+                        <div className="mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 rounded-md border border-emerald-200/60 text-[10px] font-semibold text-emerald-700">
+                          <span>⚡</span>
+                          <span>
+                            Cuma{" "}
+                            <strong className="font-extrabold text-emerald-800">
+                              Rp {dailyCost.toLocaleString("id-ID")}
+                            </strong>{" "}
+                            / hari
+                          </span>
+                        </div>
                       </div>
                     </div>
 
+                    {/* 3. RIGHT SIDE: Pricing Breakdown */}
                     <div className="text-right">
-                      <p className="text-xs text-gray-400 line-through font-medium">
-                        Rp {pkg.normalPrice?.toLocaleString("id-ID")}
-                      </p>
-                      <p className="text-base font-black text-gray-800 mt-0.5">
+                      {pkg.normalPrice && (
+                        <p className="text-xs text-gray-400 line-through font-medium">
+                          Rp {pkg.normalPrice?.toLocaleString("id-ID")}
+                        </p>
+                      )}
+                      <p className="text-base font-black text-gray-900 mt-0.5">
                         Rp {pkg.price?.toLocaleString("id-ID")}
                       </p>
-                      <p className="text-[10px] text-emerald-600 font-bold mt-0.5">
-                        {pkg.savings}
-                      </p>
+                      {pkg.savings && (
+                        <p className="text-[10px] text-emerald-600 font-bold mt-0.5">
+                          {pkg.savings}
+                        </p>
+                      )}
                     </div>
                   </div>
                 );
@@ -260,7 +307,6 @@ export default function SubscriptionExpiredPage() {
             </div>
           </div>
 
-          {/* KANAN: RINGKASAN & TOMBOL ACTION CHECKOUT */}
           <div className="lg:col-span-2 bg-gray-50/70 p-6 md:p-8 flex flex-col justify-between">
             <div>
               <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-4">
@@ -294,7 +340,6 @@ export default function SubscriptionExpiredPage() {
               </div>
             </div>
 
-            {/* 🚀 TOMBOL UTAMA: CHECKOUT */}
             <div>
               <button
                 onClick={handleCheckout}
@@ -330,7 +375,14 @@ export default function SubscriptionExpiredPage() {
         </div>
       </div>
 
-      {isModalOpen && <MismatchDomainModal isOpen={isModalOpen} currentDomain={mismatchData.currentDomain} targetDomain={mismatchData.targetDomain} targetUrl={mismatchData.targetUrl} />}
+      {isModalOpen && (
+        <MismatchDomainModal
+          isOpen={isModalOpen}
+          currentDomain={mismatchData.currentDomain}
+          targetDomain={mismatchData.targetDomain}
+          targetUrl={mismatchData.targetUrl}
+        />
+      )}
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { endpoints } from "../../../config/enpoints";
 import api from "../../../lib/api";
 import DashboardSkeleton from "@/components/DashboardSkeleton";
+import ScrollToTop from "@/components/ScrollToTop";
 import {
   Globe,
   Coffee,
@@ -212,8 +213,7 @@ export default function ProductsPage() {
             Daftar Menu & Produk
           </h1>
           <p className="text-xs text-gray-400 mt-1 font-medium uppercase tracking-wider">
-            Kelola katalog harga jual, estimasi HPP, dan status ketersediaan
-            booth
+            Atur harga, liat modal dan kelola menu jualan
           </p>
         </div>
         <button
@@ -232,7 +232,7 @@ export default function ProductsPage() {
           </span>
           <input
             type="text"
-            placeholder="Cari nama menu julu..."
+            placeholder="Cari nama menu kamu..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#0F766E] focus:bg-white transition-colors"
@@ -444,7 +444,7 @@ export default function ProductsPage() {
                   className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium text-gray-700 focus:outline-none focus:border-[#0F766E]"
                 >
                   <option value="" disabled>
-                    ── Pilih Jenis Produk ──
+                    ─ Pilih Jenis Produk ─
                   </option>
                   {["coffee", "non_coffee", "snacks"].map((master) => (
                     <option key={master} value={master}>
@@ -469,7 +469,7 @@ export default function ProductsPage() {
                   className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium text-gray-700 focus:outline-none focus:border-[#0F766E]"
                 >
                   <option value="" disabled>
-                    ── Pilih Jenis Ukuran ──
+                    ─ Pilih Jenis Ukuran ─
                   </option>
                   {["small", "regular", "large"].map((master) => (
                     <option key={master} value={master}>
@@ -645,6 +645,7 @@ export default function ProductsPage() {
         </div>
       )}
       <Toaster />
+      <ScrollToTop />
     </div>
   );
 }

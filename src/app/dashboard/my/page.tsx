@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { endpoints } from "../../../config/enpoints";
 import api from "../../../lib/api";
+import { formatDate } from "@/lib/utils";
 
 export default function MyProfilePage() {
   const queryClient = useQueryClient();
@@ -109,44 +110,108 @@ export default function MyProfilePage() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* CARD 1: INFORMASI PROFIL */}
-        <div className="md:col-span-1 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4">
-          <div className="flex items-center space-x-3 pb-4 border-b border-gray-100">
-            <div className="w-12 h-12 rounded-full bg-[#00796B] text-white flex items-center justify-center font-bold text-lg uppercase">
-              {user?.name?.charAt(0) || "U"}
+        {/* CARD 1: INFORMASI PROFIL & LANGGANAN */}
+        <div className="md:col-span-1 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-5 flex flex-col justify-between">
+          {/* SECTION TOP: AVATAR & AKUN */}
+          <div className="space-y-4">
+            <div className="flex items-center space-x-3 pb-4 border-b border-gray-100">
+              <div className="w-12 h-12 rounded-full bg-[#00796B] text-white flex items-center justify-center font-bold text-lg uppercase shadow-sm">
+                {user?.name?.charAt(0) || "U"}
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900 text-base leading-snug">
+                  {user?.name}
+                </h3>
+                <span className="inline-block px-2 py-0.5 text-[10px] font-extrabold uppercase rounded bg-teal-50 text-[#00796B] border border-teal-100/80">
+                  {user?.role === "OWNER_ADMIN"
+                    ? "Owner Admin"
+                    : "Staff / Employee"}
+                </span>
+              </div>
             </div>
-            <div>
-              <h3 className="font-bold text-gray-900 text-base">
-                {user?.name}
-              </h3>
-              <span className="inline-block px-2 py-0.5 text-[10px] font-extrabold uppercase rounded bg-teal-50 text-[#00796B] border border-teal-100">
-                {user?.role === "OWNER_ADMIN"
-                  ? "Owner Admin"
-                  : "Staff / Employee"}
-              </span>
+
+            {/* LIST INFORMASI AKUN & OUTLET */}
+            <div className="space-y-3 text-xs">
+              <div>
+                <span className="text-gray-400 font-medium block">
+                  Email Akses:
+                </span>
+                <span className="font-semibold text-gray-800">
+                  {user?.email || "-"}
+                </span>
+              </div>
+
+              <div>
+                <span className="text-gray-400 font-medium block">
+                  No. Telepon / WA:
+                </span>
+                <span className="font-semibold text-gray-800">
+                  {user?.phone || "-"}
+                </span>
+              </div>
+
+              <div>
+                <span className="text-gray-400 font-medium block">
+                  Tenant / Kedai:
+                </span>
+                <span className="font-semibold text-gray-800">
+                  {user?.tenant?.name || "-"}
+                </span>
+              </div>
+
+              {/* 📍 OUTLET / CABANG (JIKA ADA) */}
+              {user?.outlet && (
+                <div>
+                  <span className="text-gray-400 font-medium block">
+                    Outlet / Cabang:
+                  </span>
+                  <span className="font-semibold text-gray-800">
+                    {user.outlet.name}{" "}
+                    {user.outlet.branch ? `(${user.outlet.branch})` : ""}
+                  </span>
+                </div>
+              )}
+
+              <div>
+                <span className="text-gray-400 font-medium block">
+                  Domain Akses:
+                </span>
+                <span className="inline-block font-mono text-[11px] text-gray-700 bg-gray-50 px-2 py-0.5 rounded border border-gray-200 mt-0.5">
+                  {user?.tenant?.subdomain || "pos"}.julucoffee.com
+                </span>
+              </div>
             </div>
           </div>
 
-          <div className="space-y-3 text-xs">
-            <div>
-              <span className="text-gray-400 font-medium block">
-                Email Akses:
-              </span>
-              <span className="font-semibold text-gray-800">{user?.email}</span>
-            </div>
-            <div>
-              <span className="text-gray-400 font-medium block">Tenant:</span>
-              <span className="font-semibold text-gray-800">
-                {user?.tenant?.name || "-"}
-              </span>
-            </div>
-            <div>
-              <span className="text-gray-400 font-medium block">
-                Subdomain Toko:
-              </span>
-              <span className="font-mono text-gray-700 bg-gray-50 px-2 py-0.5 rounded border border-gray-200">
-                {user?.tenant?.subdomain}.julucoffee.com
-              </span>
+          {/* 💳 SECTION BOTTOM: HIGHLIGHT STATUS LANGGANAN */}
+          <div className="pt-4 border-t border-gray-100">
+            <div className="p-3.5 bg-gradient-to-br from-teal-50/60 to-emerald-50/40 rounded-xl border border-teal-100/80 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-teal-800">
+                  Paket Aktif
+                </span>
+                <span
+                  className={`text-[10px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider ${
+                    user?.tenant?.subscriptions?.[0]?.status === "ACTIVE"
+                      ? "bg-emerald-500 text-white"
+                      : "bg-orange-500 text-white"
+                  }`}
+                >
+                  {user?.tenant?.subscriptions?.[0]?.status || "PENDING"}
+                </span>
+              </div>
+
+              <div>
+                <p className="text-sm font-black text-gray-900">
+                  {user?.tenant?.subscriptions?.[0]?.plan?.name || "Paket Trial Uji Coba"}
+                </p>
+                <p className="text-[11px] text-gray-500 mt-0.5">
+                  Berakhir:{" "}
+                  <strong className="text-gray-700 font-semibold">
+                    {formatDate(user?.tenant?.subscriptions?.[0]?.endDate)}
+                  </strong>
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -190,7 +255,6 @@ export default function MyProfilePage() {
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
                 >
                   {showCurrentPassword ? (
-                    /* Icon Eye Off */
                     <svg
                       className="w-5 h-5"
                       fill="none"
@@ -205,7 +269,6 @@ export default function MyProfilePage() {
                       />
                     </svg>
                   ) : (
-                    /* Icon Eye Open */
                     <svg
                       className="w-5 h-5"
                       fill="none"

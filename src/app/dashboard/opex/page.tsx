@@ -163,11 +163,10 @@ export default function OpexManagementPage() {
       {/* 🏷️ HEADER */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-800">
-          Operational Expenditure (Opex)
+          Uang Keluar Wajib Tiap Hari (Opex)
         </h1>
         <p className="text-sm text-gray-500 mt-1">
-          Kelola beban biaya tetap harian dan simulasikan rasio efisiensi target
-          laba bersih.
+          Catat sewa, gaji, listrik. Biar tau sehari harus laku berapa biar ga nombok.
         </p>
       </div>
 
@@ -184,9 +183,7 @@ export default function OpexManagementPage() {
             </div>
 
             <p className="text-xs text-gray-400 mb-6">
-              Masukkan estimasi/target omzet harian secara manual di bawah ini
-              untuk mengukur kelayakan persentase Opex Anda sebelum rilis menu
-              baru.
+              Kalau sehari laku Rp 300.000, cukup ga buat nutup sewa & gaji?
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
@@ -222,7 +219,7 @@ export default function OpexManagementPage() {
                 className={`p-5 rounded-xl border transition-all duration-300 ${simulatedStatus.bg}`}
               >
                 <p className="text-xs font-semibold uppercase tracking-wider opacity-70">
-                  Rasio Opex Hasil Simulasi
+                  Hasil Cek: Masih Untung Atau Nombok?
                 </p>
                 <div className="flex items-baseline gap-2 mt-1">
                   <span className="text-3xl font-extrabold tracking-tight">
@@ -483,7 +480,7 @@ export default function OpexManagementPage() {
         {/* 📥 KANAN: INPUT FORM & REAL CLOSING RATIO */}
         <div className="flex flex-col gap-6">
           {/* INDIKATOR METRIK OPERASIONAL RIIL */}
-          <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+          {/* <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
               Live Dashboard Snapshot
             </h3>
@@ -506,12 +503,12 @@ export default function OpexManagementPage() {
                 Status Lapangan: <b>{actualStatus.text}</b>
               </span>
             </div>
-          </div>
+          </div> */}
 
           {/* FORM TAMBAH BEPAN OPEX BARU */}
           <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
             <div className="flex items-center gap-2 mb-4">
-              <h3 className="font-bold text-gray-800">Tambah Komponen Opex</h3>
+              <h3 className="font-bold text-gray-800">Tambah Tagihan Wajib</h3>
             </div>
 
             <form onSubmit={handleAddComponent} className="flex flex-col gap-4">
