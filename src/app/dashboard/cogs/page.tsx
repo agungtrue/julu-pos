@@ -5,7 +5,15 @@ import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { endpoints } from "../../../config/enpoints";
 import api from "../../../lib/api";
 import DashboardSkeleton from "@/components/DashboardSkeleton";
-import { Package, CalculatorIcon, Edit, Plus, Save } from "lucide-react";
+import ScrollToTop from "@/components/ScrollToTop";
+import {
+  Package,
+  CalculatorIcon,
+  Edit,
+  Plus,
+  Save,
+  Search,
+} from "lucide-react";
 
 interface Ingredient {
   id: string;
@@ -200,6 +208,8 @@ export default function HppSystemPage() {
   const [editingRecipe, setEditingRecipe] = useState<RecipeItem | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [selectedNewIngredientId, setSelectedNewIngredientId] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQueryRecipe, setsSearchQueryRecipe] = useState("");
 
   const formatIDR = (num: number) => {
     return new Intl.NumberFormat("id-ID", {
@@ -341,6 +351,22 @@ export default function HppSystemPage() {
     });
   };
 
+  const filteredIngredients = ingredients?.filter((p: Ingredient) => {
+    const matchesSearch = p.name
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    
+    return matchesSearch;
+  });
+
+  const filteredRecipes = recipes?.filter((p: RecipeItem) => {
+    const matchesSearch = p.name
+      .toLowerCase()
+      .includes(searchQueryRecipe.toLowerCase());
+    
+    return matchesSearch;
+  });
+
   if (isLoadingProducts || isLoadingIngredients) return <DashboardSkeleton />;
 
   return (
@@ -352,8 +378,10 @@ export default function HppSystemPage() {
             Sistem HPP & COGS
           </h1>
           <p className="text-xs text-gray-400 mt-1 font-medium uppercase tracking-wider">
-            Breakdown biaya granular bahan baku hingga kalkulasi otomatis resep
-            menu produk
+            Hitung Modal Bahan Sampai Jadi Menu
+          </p>
+          <p className="text-xs text-gray-400 mt-1 font-medium tracking-wider">
+            Biar tau modal 1 gelas berapa, jadi harga jual ga asal tebak.
           </p>
         </div>
       </div>
@@ -387,6 +415,20 @@ export default function HppSystemPage() {
       {/* TAB 1: LIST BAHAN BAKU */}
       {activeTab === "ingredients" && (
         <>
+          <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+            <div className="relative flex-1">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400">
+                <Search className="w-4 h-4" />
+              </span>
+              <input
+                type="text"
+                placeholder="Cari nama bahan baku..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#0F766E] focus:bg-white transition-colors"
+              />
+            </div>
+          </div>
           <button
             onClick={handleOpenAddBahanBakuModalOpen}
             className="lex-1 flex gap-2 text-xs font-black text-[#EF5B2B] bg-[#EF5B2B]/5 px-3 py-1.5 rounded-xl hover:bg-[#EF5B2B]/10 transition-colors"
@@ -395,7 +437,7 @@ export default function HppSystemPage() {
             Bahan Baku Baru
           </button>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {ingredients?.map((ing: Ingredient) => {
+            {filteredIngredients?.map((ing: Ingredient) => {
               // 1. Logic Indikator Stok Menipis
               const isLowStock = Number(ing.stock) <= Number(ing.minimumStock);
 
@@ -530,7 +572,7 @@ export default function HppSystemPage() {
             })}
 
             {/* Empty State jika data kosong */}
-            {ingredients?.length === 0 && (
+            {filteredIngredients?.length === 0 && (
               <div className="col-span-full bg-white border border-dashed border-gray-200 rounded-3xl p-12 text-center">
                 <div className="w-12 h-12 rounded-full bg-gray-50 text-gray-400 flex items-center justify-center mx-auto mb-3">
                   <svg
@@ -569,8 +611,22 @@ export default function HppSystemPage() {
             >
             ➕ Racik Resep Baru
             </button> */}
+          <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+            <div className="relative flex-1">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400">
+                <Search className="w-4 h-4" />
+              </span>
+              <input
+                type="text"
+                placeholder="Cari nama resep..."
+                value={searchQueryRecipe}
+                onChange={(e) => setsSearchQueryRecipe(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#0F766E] focus:bg-white transition-colors"
+              />
+            </div>
+          </div>
           <div className="space-y-6">
-            {recipes?.map((recipe: RecipeItem) => {
+            {filteredRecipes?.map((recipe: RecipeItem) => {
               const totalHpp = getRecipeTotalHpp(recipe.ingredientsBreakdown);
               const grossProfit = recipe.price - totalHpp;
               const marginPercentage = (
@@ -656,7 +712,7 @@ export default function HppSystemPage() {
               );
             })}
 
-            {recipes?.length === 0 && (
+            {filteredRecipes?.length === 0 && (
               <div className="col-span-full bg-white border border-dashed border-gray-200 rounded-3xl p-12 text-center">
                 <span className="text-3xl block mb-2"></span>
                 <h4 className="text-sm font-bold text-gray-700">
@@ -1215,6 +1271,7 @@ export default function HppSystemPage() {
           </form>
         </div>
       )}
+    <ScrollToTop />
     </div>
   );
 }

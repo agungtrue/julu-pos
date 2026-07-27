@@ -38,7 +38,7 @@ export function formatDate(dateInput: Date | string | number | undefined | null)
 }
 
 export const getPeriodLabel = (
-  filter: "today" | "yesterday" | "month" | "last_month"
+  filter: "today" | "yesterday" | "month" | "last_month" | "custom"
 ): string => {
   const now = new Date();
 

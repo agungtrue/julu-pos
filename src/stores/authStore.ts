@@ -5,6 +5,7 @@ interface TenantInfo {
   id: string;
   name: string;
   subdomain?: string;
+  subscriptions?: any[]
 }
 
 interface UserProfile {

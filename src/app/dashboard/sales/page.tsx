@@ -133,11 +133,12 @@ export default function SalesLogPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-200/60 pb-5">
         <div>
           <h1 className="text-2xl font-bold text-gray-800 tracking-tight">
-            Log Transaksi Penjualan
+            Riwayat Transaksi Penjualan
           </h1>
           <p className="text-xs text-gray-400 mt-1 font-medium uppercase tracking-wider">
             {/* Aliran data real-time tersinkronisasi langsung dari Julu POS Mobile
             App */}
+            Pantau dan validasi penjualan
           </p>
         </div>
         <div className="bg-emerald-50 border border-emerald-100 px-4 py-2.5 rounded-2xl flex items-center gap-2.5 w-fit shadow-sm">
