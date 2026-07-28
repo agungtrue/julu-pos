@@ -25,7 +25,7 @@ interface CheckoutResponse {
 export default function SubscriptionExpiredPage() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
-  console.log({ user });
+//   console.log({ user });
   const [selectedPackage, setSelectedPackage] = useState("3_MONTHS");
   const [mismatchData, setMismatchData] = useState({
     currentDomain: "",
@@ -36,30 +36,30 @@ export default function SubscriptionExpiredPage() {
 
   // 1. SMART CHECK: Cek apakah user sebenarnya punya invoice PENDING yang belum dibayar
   const {
-    data: pendingInvoice,
-    isLoading: isCheckingPending,
+    data: tenantInfo,
+    isLoading: isCheckingTenant,
     isError,
-    error: activePendingInvoiceError,
+    error: tenantInfoError,
   } = useQuery({
-    queryKey: ["activePendingInvoice"],
+    queryKey: ["tenantInfo"],
     queryFn: async () => {
-      const url = endpoints.subscriptions.activePending;
+      const id = user?.tenant?.id || ''
+      const url = endpoints.tenants.status(id);
 
-      const res = await api.get(url);
-      return res.data?.data || res.data;
+      await api.get(url);
     },
     retry: false,
   });
 
-  //   console.log({ pendingInvoice, isError, activePendingInvoiceError });
+    // console.log({ tenantInfo, isError, tenantInfoError });
 
   useEffect(() => {
-    if (isError && axios.isAxiosError(activePendingInvoiceError)) {
-      const errorData = activePendingInvoiceError.response?.data;
+    if (isError && axios.isAxiosError(tenantInfoError)) {
+      const errorData = tenantInfoError.response?.data;
 
       // Tangkap payload JSON yang kita buat di NestJS Guard tadi
       if (
-        activePendingInvoiceError.response?.status === 403 &&
+        tenantInfoError.response?.status === 403 &&
         errorData?.code === "TENANT_DOMAIN_MISMATCH"
       ) {
         // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -71,14 +71,7 @@ export default function SubscriptionExpiredPage() {
         setIsModalOpen(true);
       }
     }
-  }, [isError, activePendingInvoiceError, setIsModalOpen, setMismatchData]);
-
-  // Jika ada invoice PENDING, langsung lemparkan ke URL invoice tersebut!
-  useEffect(() => {
-    if (!!pendingInvoice?.invoiceNumber) {
-      router.replace(`/billing/${pendingInvoice.invoiceNumber}`);
-    }
-  }, [pendingInvoice, router]);
+  }, [isError, tenantInfoError, setIsModalOpen, setMismatchData]);
 
   const fetchpackageData = async () => {
     const url = endpoints.subscriptions.plans;
@@ -109,8 +102,6 @@ export default function SubscriptionExpiredPage() {
       return response.data?.data || response.data;
     },
     onSuccess: (data: CheckoutResponse) => {
-      //   setCheckoutData(data);
-      console.log("onSuccess", { data });
       const { invoiceNumber } = data.invoice;
       window.location.href = `/billing/${invoiceNumber}`;
     },

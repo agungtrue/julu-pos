@@ -46,7 +46,6 @@ api.interceptors.response.use(
     //   console.log({ status, data })
 
       if (typeof window !== 'undefined' && window.location.pathname !== '/billing') {
-        console.log('OK')
         window.location.href = data?.redirectTo || '/billing';
         return;
       }

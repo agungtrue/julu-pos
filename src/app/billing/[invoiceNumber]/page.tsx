@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import api from "../../../lib/api";
@@ -11,7 +11,16 @@ export default function InvoiceDetailPage() {
   const router = useRouter();
   const invoiceNumber = params?.invoiceNumber as string;
 
-  // 🔄 LIVE POLLING DETAIL INVOICE
+  const [copied, setCopied] = useState(false);
+  const accountNumber = "0840550583";
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(accountNumber);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  // LIVE POLLING DETAIL INVOICE
   const {
     data: invoice,
     isLoading,
@@ -26,9 +35,8 @@ export default function InvoiceDetailPage() {
     enabled: !!invoiceNumber,
     refetchInterval: (query) => {
       const status = query.state.data?.status;
-      // Jika status invoice SUDAH dibayar, hentikan polling
       if (status === "PAID") return false;
-      return 3000; // Refetch setiap 3 detik
+      return 3000;
     },
   });
 
@@ -117,7 +125,7 @@ export default function InvoiceDetailPage() {
 
             <button
               onClick={() => router.push("/billing")}
-              className="w-full text-center text-xs text-gray-500 font-semibold py-2 bg-transparent border border-gray-200 rounded-xl"
+              className="w-full cursor-pointer text-center text-xs text-gray-500 font-semibold py-2 bg-transparent border border-gray-200 rounded-xl"
             >
               ← Ganti Paket / Buat Tagihan Baru
             </button>
@@ -130,7 +138,7 @@ export default function InvoiceDetailPage() {
               </h3>
 
               <div className="flex flex-col gap-4 text-xs text-gray-700">
-                <div className="flex gap-3 items-start">
+                {/* <div className="flex gap-3 items-start">
                   <div className="w-6 h-6 rounded-lg bg-[#0A8F8A]/10 text-[#0A8F8A] font-bold flex items-center justify-center shrink-0 border border-[#0A8F8A]/20">
                     1
                   </div>
@@ -146,28 +154,105 @@ export default function InvoiceDetailPage() {
                       terdekat.
                     </p>
                   </div>
-                </div>
+                </div> */}
 
-                <div className="flex gap-3 items-start">
-                  <div className="w-6 h-6 rounded-lg bg-[#0A8F8A]/10 text-[#0A8F8A] font-bold flex items-center justify-center shrink-0 border border-[#0A8F8A]/20">
-                    2
+                <div className="flex gap-3.5 items-start">
+                  {/* 1. Step Indicator Badge */}
+                  <div className="w-7 h-7 rounded-xl bg-[#0A8F8A]/10 text-[#0A8F8A] font-black flex items-center justify-center shrink-0 border border-[#0A8F8A]/20 text-xs shadow-2xs">
+                    1
                   </div>
-                  <div>
-                    <p className="font-bold text-gray-800">
-                      Transfer Manual Bank
-                    </p>
-                    <p className="text-gray-700 font-mono mt-1 bg-white p-2.5 rounded-lg border border-gray-200 shadow-2xs leading-normal">
-                      Bank BCA <br />
-                      No. Rek:{" "}
-                      <span className="font-bold text-gray-900">
-                        0840550583
-                      </span>{" "}
-                      <br />
-                      a.n:{" "}
-                      <span className="font-bold text-gray-900">
-                        Syuhada Dwi Agung
-                      </span>
-                    </p>
+
+                  {/* 2. Content Area */}
+                  <div className="flex-1 space-y-2.5">
+                    <div>
+                      <h4 className="font-bold text-gray-900 text-sm">
+                        Transfer Manual Bank
+                      </h4>
+                      <p className="text-xs text-gray-500">
+                        Lakukan pembayaran sesuai nominal tepat ke rekening
+                        berikut:
+                      </p>
+                    </div>
+
+                    {/* 💳 REKENING CARD IMPROVEMENT */}
+                    <div className="bg-gradient-to-br from-gray-50 to-white p-3.5 rounded-2xl border border-gray-200 shadow-2xs space-y-3">
+                      {/* Header Bank & Nama Pemilik */}
+                      <div className="flex items-center justify-between border-b border-gray-100 pb-2.5">
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 bg-blue-50 text-blue-700 font-extrabold text-[10px] rounded-md border border-blue-100 uppercase tracking-wider">
+                            Bank BCA
+                          </span>
+                          <span className="text-xs text-gray-400">•</span>
+                          <span className="text-xs text-gray-600 font-medium">
+                            a.n{" "}
+                            <strong className="text-gray-900 font-bold">
+                              Syuhada Dwi Agung
+                            </strong>
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Nomor Rekening & Tombol Copy */}
+                      <div className="flex items-center justify-between gap-2 bg-white p-2.5 rounded-xl border border-gray-100 shadow-2xs">
+                        <div>
+                          <span className="text-[10px] text-gray-400 font-semibold block uppercase tracking-wider">
+                            Nomor Rekening
+                          </span>
+                          <span className="font-mono text-base font-black text-gray-900 tracking-wider">
+                            {accountNumber}
+                          </span>
+                        </div>
+
+                        {/* BUTTON COPY TO CLIPBOARD */}
+                        <button
+                          type="button"
+                          onClick={handleCopy}
+                          className={`px-3 py-1.5 cursor-pointer rounded-lg text-xs font-bold transition-all duration-200 flex items-center gap-1.5 shrink-0 active:scale-95 ${
+                            copied
+                              ? "bg-emerald-500 text-white shadow-xs"
+                              : "bg-gray-100 hover:bg-[#0A8F8A] text-gray-700 hover:text-white border border-gray-200 hover:border-[#0A8F8A]"
+                          }`}
+                        >
+                          {copied ? (
+                            <>
+                              {/* Icon Checkmark */}
+                              <svg
+                                className="w-3.5 h-3.5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2.5}
+                                  d="M5 13l4 4L19 7"
+                                />
+                              </svg>
+                              <span>Tersalin!</span>
+                            </>
+                          ) : (
+                            <>
+                              {/* Icon Copy / Clipboard */}
+                              <svg
+                                className="w-3.5 h-3.5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 002-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                                />
+                              </svg>
+                              <span>Salin</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -180,7 +265,7 @@ export default function InvoiceDetailPage() {
                 rel="noreferrer"
                 className="w-full py-3 bg-[#EF5B2B] hover:bg-[#d64a20] text-white text-center text-sm font-bold rounded-xl transition-all shadow-md block"
               >
-                Konfirmasi Pembayaran via WA
+                Kirim Bukti Pembayaran via WA
               </a>
             </div>
           </div>
