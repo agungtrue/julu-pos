@@ -381,7 +381,7 @@ export default function ProductsPage() {
                 <h3 className="font-black text-gray-800 text-lg tracking-tight mt-2">
                   Informasi Produk
                 </h3>
-                <p className="text-gray-400">Jika brand anda buka kopi, maka pilihan tipe produk yang sesuai</p>
+                <p className="text-gray-400">Jika brand anda buka kopi, maka pilihlah tipe produk yang sesuai</p>
                 <span className="text-[12px] font-bold text-gray-400">Contoh Jus/Air Mineral: non coffee, Kentang Goreng: Snacks</span>
               </div>
               <button

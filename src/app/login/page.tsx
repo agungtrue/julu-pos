@@ -15,6 +15,13 @@ export default function JuluLoginPage() {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
+  // 💡 CONFIG WA ADMINISTRATOR
+  const adminWaNumber = "6287769675686";
+  const waMessage = encodeURIComponent(
+    "Halo Admin Julu POS, saya lupa kata sandi untuk akun Julu POS saya. Mohon bantuannya untuk reset password.",
+  );
+  const waUrl = `https://wa.me/${adminWaNumber}?text=${waMessage}`;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -57,11 +64,10 @@ export default function JuluLoginPage() {
           </div> */}
           <h1 className="text-xl font-bold text-gray-800 tracking-tight">
             <span className="text-julu-orange">JULU </span>
-            {/* JULU <span className="text-julu-orange">POINT OF SALES</span> */}
-            POINT OF <span className="text-julu-tosca">SALES </span>
+            POINT OF <span className="text-julu-tosca">SALE </span>
           </h1>
           <p className="text-xs text-gray-400 mt-1 uppercase tracking-widest font-medium">
-            POS untuk UMKM v1.0
+            Sistem Kasir Pintar UMKM v1.0
           </p>
         </div>
 
@@ -73,7 +79,7 @@ export default function JuluLoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+            <label className="block text-xs font-bold text-gray-500 tracking-wider mb-2">
               Email Akses
             </label>
             <input
@@ -87,7 +93,7 @@ export default function JuluLoginPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+            <label className="block text-xs font-bold text-gray-500 tracking-wider mb-2">
               Kata Sandi
             </label>
             <div className="relative w-full">
@@ -109,6 +115,20 @@ export default function JuluLoginPage() {
             </div>
           </div>
 
+          <div className="flex justify-end mt-2">
+            <a
+              href={waUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-gray-400 hover:text-julu-tosca font-medium transition-colors flex items-center gap-1 group"
+            >
+              Lupa kata sandi?{" "}
+              <span className="text-julu-tosca font-bold group-hover:underline">
+                Hubungi Admin
+              </span>
+            </a>
+          </div>
+
           <button
             type="submit"
             disabled={isLoading}
@@ -118,7 +138,7 @@ export default function JuluLoginPage() {
               <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
             ) : (
               <span className="flex flex-1 gap-2 justify-center items-center">
-                LOGIN
+                Masuk ke Kasir
                 <LogIn className="w-4 h-4" />
               </span>
             )}
@@ -127,8 +147,8 @@ export default function JuluLoginPage() {
 
         <div className="mt-8 text-center border-t border-gray-100 pt-4">
           <p className="text-[11px] text-gray-400 leading-relaxed">
-            Sistem terenkripsi secara internal. Hak cipta milik Julu POS. Jangan
-            membagikan token kredensial kepada pihak luar.
+            Sistem aman & terenkripsi. Hak cipta © 2026 Julu POS. Jangan
+            membagikan kata sandi kepada pihak luar.
           </p>
         </div>
       </div>

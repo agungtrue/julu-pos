@@ -24,7 +24,7 @@ interface Opex {
 
 export default function OpexManagementPage() {
   //   const [opexList, setOpexList] = useState(INITIAL_OPEX_COMPONENTS);
-  const [simulatedRevenue, setSimulatedRevenue] = useState(300000); // Default target omzet harian Anda (30 cup x 10k)
+  const [simulatedRevenue, setSimulatedRevenue] = useState(500000); // Default target omzet harian Anda (30 cup x 10k)
   const [currentActualRevenue] = useState(604000); // Mock data omzet riil terakhir (Closingan Minggu lalu)
 
   // Form State untuk tambah komponen baru
