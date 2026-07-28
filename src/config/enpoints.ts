@@ -50,6 +50,7 @@ export const endpoints = {
     get: `${BASE_URL}/tenants`,
     post: `${BASE_URL}/tenants`,
     patch: (id: string) => `${BASE_URL}/tenants/${id}`,
+    status: (id: string) => `${BASE_URL}/tenants/${id}/status`,
   },
   opex: {
     get: `${BASE_URL}/opex`,
