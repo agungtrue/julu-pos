@@ -32,7 +32,7 @@ export default function CreateOrderPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orderUuid, setOrderUuid] = useState(null);
-  const [customerName, setCustomerName] = useState('Walk-in Customer');
+  const [customerName, setCustomerName] = useState("Walk-in Customer");
 
   // ==========================================
   // ⚙️ INTERACTIVE LOGIC (STATE HANDLERS)
@@ -183,7 +183,7 @@ export default function CreateOrderPage() {
       queryClient.invalidateQueries({ queryKey: ["orderListData"] });
       setOrderUuid(null);
       setCart([]);
-      setCashReceived('')
+      setCashReceived("");
       playSuccessSound();
     },
   });
@@ -263,12 +263,12 @@ export default function CreateOrderPage() {
               <div
                 key={product.id}
                 onClick={() => handleAddToCart(product)}
-                className={
-                    `bg-white p-5 rounded-2xl border
-                     ${isSelected 
-                        ? 'border-2 border-[#0A8F8A] bg-[#0A8F8A]/5 shadow-md scale-[1.01]' 
-                        : 'border-gray-100 shadow-sm'
-                        }
+                className={`bg-white p-5 rounded-2xl border
+                     ${
+                       isSelected
+                         ? "border-2 border-[#0A8F8A] bg-[#0A8F8A]/5 shadow-md scale-[1.01]"
+                         : "border-gray-100 shadow-sm"
+                     }
                      hover:border-[#0F766E] hover:shadow-md cursor-pointer transition-all flex flex-col justify-between h-40 group`}
               >
                 <div className="space-y-1">
@@ -296,12 +296,17 @@ export default function CreateOrderPage() {
           })}
 
           {filteredProducts?.length === 0 && (
-          <div className="col-span-full bg-white border border-dashed border-gray-200 rounded-3xl p-12 text-center">
-            <span className="text-3xl block mb-2"></span>
-            <h4 className="text-sm font-bold text-gray-700">Menu tidak ditemukan</h4>
-            <p className="text-xs text-gray-400 mt-1">Coba periksa kembali ejaan atau ganti filter kategori produk Anda.</p>
-          </div>
-        )}
+            <div className="col-span-full bg-white border border-dashed border-gray-200 rounded-3xl p-12 text-center">
+              <span className="text-3xl block mb-2"></span>
+              <h4 className="text-sm font-bold text-gray-700">
+                Menu tidak ditemukan
+              </h4>
+              <p className="text-xs text-gray-400 mt-1">
+                Coba periksa kembali ejaan atau ganti filter kategori produk
+                Anda.
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -374,9 +379,29 @@ export default function CreateOrderPage() {
                           <Minus className="w-3 h-3" />
                         )}
                       </button>
-                      <span className="px-2 font-bold text-gray-700 min-w-[20px] text-center">
-                        {item.qty}
-                      </span>
+                      <input
+                        type="number"
+                        min="1"
+                        value={item.qty === 0 ? "" : item.qty}
+                        onFocus={(e) => e.target.select()} // ⚡ Auto highlight angka saat diklik
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === "") {
+                            return;
+                          }
+                          const parsed = parseInt(val, 10);
+                          if (!isNaN(parsed) && parsed >= 0) {
+                            handleUpdateQty(item.id, parsed);
+                          }
+                        }}
+                        onBlur={() => {
+                          // Fallback jika kasir meninggalkan input dalam keadaan kosong / <= 0
+                          if (!item.qty || item.qty < 1) {
+                            handleUpdateQty(item.id, 1);
+                          }
+                        }}
+                        className="w-10 cursor-pointer text-center font-bold text-gray-800 text-xs focus:outline-none bg-transparent py-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
                       <button
                         onClick={() => handleUpdateQty(item.id, item.qty + 1)}
                         className="p-1.5 hover:bg-gray-50 text-gray-500 transition-colors"
