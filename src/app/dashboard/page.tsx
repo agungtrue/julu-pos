@@ -19,11 +19,6 @@ export default function DashboardPage() {
     "today" | "month" | "yesterday" | "last_month" | "custom"
   >("today");
 
-  const [currentFilterDate, setCurrentFilterDate] = useState({
-    startDate: "",
-    endDate: "",
-  });
-
   const getDateParamsForThisMonth = () => {
     const today = new Date();
     const year = today.getFullYear();

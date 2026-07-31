@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import api from "../../../lib/api";
 import { formatJuluDate } from "../../../lib/utils";
 import { endpoints } from "../../../config/enpoints";
@@ -9,6 +9,9 @@ import DashboardSkeleton from "@/components/DashboardSkeleton";
 import { Search } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import dayjs from "dayjs";
+import { Trash2 } from "lucide-react";
+import { Toaster, toast } from "sonner";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 
 interface TransactionDetail {
   name: string;
@@ -40,6 +43,7 @@ interface Transaction {
 
 export default function SalesLogPage() {
   const user = useAuthStore((state) => state.user);
+  const isOwnerAdmin = user?.role === "OWNER_ADMIN";
 
   const [filterMethod, setFilterMethod] = useState<"ALL" | "qris" | "cash">(
     "ALL",
@@ -50,6 +54,15 @@ export default function SalesLogPage() {
   // State untuk Manajemen Modal Detail Order
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
+
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean;
+    orderId: string | null;
+  }>({
+    isOpen: false,
+    orderId: null,
+  });
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchOrderListData = async (filter: "today" | "") => {
     let url = endpoints.orders.getAll;
@@ -77,6 +90,8 @@ export default function SalesLogPage() {
     dayjs().format("YYYY-MM-DD"),
   );
   const [isExporting, setIsExporting] = useState(false);
+
+  const queryClient = useQueryClient();
 
   const getDateRange = () => {
     let startDate = "";
@@ -125,7 +140,7 @@ export default function SalesLogPage() {
     try {
       const { startDate, endDate } = getDateRange();
 
-      const url = endpoints.orders.salesReport
+      const url = endpoints.orders.salesReport;
       const response = await api.get(url, {
         params: { startDate, endDate },
         responseType: "blob",
@@ -154,6 +169,31 @@ export default function SalesLogPage() {
     } finally {
       setIsExporting(false);
     }
+  };
+
+  const { mutate: handleDeleteOrder } = useMutation({
+    mutationFn: async (id: string) => {
+      setIsDeleting(true);
+      return await api.delete(endpoints.orders.delete(id));
+    },
+    onSuccess: () => {
+      toast.success("Transaksi Berhasil dihapus!", {
+        description: "",
+        className:
+          "bg-emerald-50 border-emerald-200 text-emerald-800 rounded-xl",
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["orderSummaryData", "today"],
+      });
+      queryClient.invalidateQueries({ queryKey: ["orderListData"] });
+      setIsDeleting(false);
+      setDeleteModal({ isOpen: false, orderId: null });
+    },
+  });
+
+  const onDeleteClick = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation(); // Wajib agar card onClick (Detail) tidak ikut ter-trigger!
+    setDeleteModal({ isOpen: true, orderId: id });
   };
 
   if (isLoading) return <DashboardSkeleton />;
@@ -287,42 +327,45 @@ export default function SalesLogPage() {
         </div>
       </div>
 
-      {/* ALIRAN FEED TRANSAKSI LIST */}
+      {/* TRANSAKSI LIST */}
       <div className="space-y-4">
         <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">
-          Aliran Feed Transaksi (Ketuk untuk Detail)
+          Feed Transaksi (Ketuk untuk Detail)
         </h3>
 
         {transactions?.map((tx: Transaction) => (
           <div
             key={tx.id}
             onClick={() => handleOpenDetail(tx)}
-            className="bg-white border border-gray-100 rounded-3xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-gray-300 hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer group"
+            className="bg-white border border-gray-100 rounded-3xl p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-gray-300 hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer group relative"
           >
+            {/* 1. INFORMASI UTAMA & BADGE */}
             <div className="space-y-1">
               <div className="flex items-center gap-2.5 flex-wrap">
-                {/* <span className="font-mono text-xs font-bold text-gray-800 tracking-tight group-hover:text-[#0F766E] transition-colors">
-                  {tx.id}
-                </span> */}
                 <span
-                  className={`text-[9px] font-black tracking-wider uppercase px-2 py-0.5 rounded-md ${tx.payment_method === "qris" ? "bg-[#0F766E]/10 text-[#0F766E]" : "bg-[#EF5B2B]/10 text-[#EF5B2B]"}`}
+                  className={`text-[9px] font-black tracking-wider uppercase px-2 py-0.5 rounded-md ${
+                    tx.payment_method === "qris"
+                      ? "bg-[#0F766E]/10 text-[#0F766E]"
+                      : "bg-[#EF5B2B]/10 text-[#EF5B2B]"
+                  }`}
                 >
                   {tx.payment_method}
                 </span>
                 <span
                   className={`text-[9px] font-black tracking-wider uppercase px-2 py-0.5 rounded-md bg-[#0A8F8A] text-[#ffffff]`}
                 >
-                  {tx.customerName}
+                  {tx.customerName || "Walk-in Customer"}
                 </span>
               </div>
               <p className="text-[11px] text-gray-400 font-medium">
                 {formatJuluDate(tx.createdAt)} • Operator:{" "}
                 <span className="text-gray-600 font-semibold">
-                  {tx.user.name}
+                  {tx.user?.name || "Kasir"}
                 </span>
               </p>
             </div>
 
+            {/* 2. RINGKASAN PESANAN */}
             <div className="bg-gray-50/60 border border-gray-100/40 rounded-xl p-3 flex-1 md:max-w-xl">
               <span className="text-[9px] text-gray-400 uppercase font-bold block mb-0.5">
                 Pesanan ringkas:
@@ -332,18 +375,33 @@ export default function SalesLogPage() {
               </p>
             </div>
 
-            <div className="text-left md:text-right flex md:flex-col justify-between items-center md:items-end border-t border-gray-50 md:border-0 pt-3 md:pt-0">
-              <span className="text-[10px] text-gray-400 uppercase font-bold block md:hidden">
-                Total:
-              </span>
-              <div>
-                <span className="text-base font-black text-gray-800 font-mono tracking-tight">
-                  {formatIDR(tx.total)}
+            {/* 3. TOTAL AKHIR & TOMBOL ACTION */}
+            <div className="flex items-center justify-between md:justify-end gap-4 border-t border-gray-50 md:border-0 pt-3 md:pt-0">
+              <div className="text-left md:text-right">
+                <span className="text-[10px] text-gray-400 uppercase font-bold block md:hidden">
+                  Total:
                 </span>
-                <span className="text-[10px] text-gray-400 block font-medium text-right mt-0.5">
-                  ({getTotalItemsCount(tx.items)} item)
-                </span>
+                <div>
+                  <span className="text-base font-black text-gray-800 font-mono tracking-tight">
+                    {formatIDR(tx.total)}
+                  </span>
+                  <span className="text-[10px] text-gray-400 block font-medium text-right mt-0.5">
+                    ({getTotalItemsCount(tx.items)} item)
+                  </span>
+                </div>
               </div>
+
+              {/* 💡 TOMBOL DELETE: HANYA DIRENDER UNTUK ROLE owner_admin */}
+              {isOwnerAdmin && (
+                <button
+                  type="button"
+                  onClick={(e) => onDeleteClick(e, tx.id)}
+                  title="Hapus Transaksi"
+                  className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all cursor-pointer ml-2"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
             </div>
           </div>
         ))}
@@ -578,9 +636,7 @@ export default function SalesLogPage() {
                       onChange={() => setSelectedRange("custom")}
                       className="w-4 h-4 accent-[#0A8F8A]"
                     />
-                    <span className="text-sm">
-                      Pilih Tanggal Kustom
-                    </span>
+                    <span className="text-sm">Pilih Tanggal Kustom</span>
                   </div>
                 </label>
               </div>
@@ -639,9 +695,7 @@ export default function SalesLogPage() {
                       Mengunduh...
                     </>
                   ) : (
-                    <>
-                      Unduh Sekarang
-                    </>
+                    <>Unduh Sekarang</>
                   )}
                 </button>
               </div>
@@ -649,6 +703,19 @@ export default function SalesLogPage() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, orderId: null })}
+        onConfirm={() => handleDeleteOrder(String(deleteModal.orderId))}
+        title="Hapus Transaksi?"
+        description="Tindakan ini akan menghapus data transaksi secara permanen dan tidak dapat dikembalikan."
+        confirmText="Ya, Hapus"
+        variant="danger"
+        isLoading={isDeleting}
+      />
+
+      <Toaster />
     </div>
   );
 }
