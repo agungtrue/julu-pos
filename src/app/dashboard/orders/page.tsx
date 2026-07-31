@@ -17,6 +17,7 @@ import {
 import { ProductItem, CartItem } from "./types/order.types";
 import { Toaster, toast } from "sonner";
 import { useAuthStore } from "@/stores/authStore";
+import { useThermalPrint } from "@/hooks/useThermalPrint";
 
 // later ts strict
 
@@ -28,14 +29,18 @@ const CATEGORY_MAP = {
 };
 
 export default function CreateOrderPage() {
+  const { printReceipt } = useThermalPrint();
+
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orderUuid, setOrderUuid] = useState(null);
   const [customerName, setCustomerName] = useState("Walk-in Customer");
-
+  const [isPrintReceipt, setIsPrintReceipt] = useState(true);
+  const [isPreConfirmLoading, setIsPreConfirmLoading] = useState(false);
+  const [isConfirmLoading, setIsConfirmLoading] = useState(false);
   // ==========================================
-  // ⚙️ INTERACTIVE LOGIC (STATE HANDLERS)
+  // INTERACTIVE LOGIC (STATE HANDLERS)
   // ==========================================
 
   // 1. Fungsi Tambah ke Keranjang Belanja
@@ -131,6 +136,20 @@ export default function CreateOrderPage() {
     };
   }, [cashReceived, totals.totalFinal]);
 
+  const [orderType, setOrderType] = useState<
+    "DINE_IN" | "TAKEAWAY" | "DELIVERY"
+  >("DINE_IN");
+
+  const paidAmount =
+    paymentMethod === "cash" ? Number(cashReceived) || 0 : totals.totalFinal;
+
+  const changeAmount =
+    paymentMethod === "cash"
+      ? cashSummary.isShortage
+        ? 0
+        : cashSummary.change
+      : 0;
+
   const queryClient = useQueryClient();
 
   //   init order
@@ -144,6 +163,9 @@ export default function CreateOrderPage() {
         total,
         payment_method: paymentMethod,
         customerName,
+        orderType: orderType,
+        paidAmount: paidAmount,
+        changeAmount: changeAmount,
       };
       return await api.post(endpoints.orders.order.init, payload);
     },
@@ -152,10 +174,12 @@ export default function CreateOrderPage() {
       setOrderUuid(uuid);
       queryClient.invalidateQueries({ queryKey: ["orderSummaryData"] });
       queryClient.invalidateQueries({ queryKey: ["orderListData"] });
+      setIsPreConfirmLoading(false);
     },
   });
 
   const handleInitOrders = () => {
+    setIsPreConfirmLoading(true);
     postInitOrders(cart);
   };
 
@@ -173,7 +197,7 @@ export default function CreateOrderPage() {
       };
       return await api.post(endpoints.orders.order.confirm, payload);
     },
-    onSuccess: () => {
+    onSuccess: (res) => {
       toast.success("Transaksi Berhasil!", {
         description: "Pesanan telah disimpan, silahkan cek di sales page.",
         className:
@@ -185,11 +209,71 @@ export default function CreateOrderPage() {
       setCart([]);
       setCashReceived("");
       playSuccessSound();
+      setIsConfirmLoading(false)
+
+      if (isPrintReceipt) {
+        getPrintReceipt(res.data);
+      }
     },
   });
 
+  const getPrintReceipt = (payload: any) => {
+    const tenant = {
+      name: payload.user.subscription.tenant.name,
+      address: payload.user.subscription.tenant.address,
+      phone: payload.user.subscription.tenant.phone,
+    };
+
+    const order = {
+      id: payload.order.id,
+      invoiceNo: payload.order.invoiceNo,
+      address: payload.user.subscription.tenant.address,
+      createdAt: payload.order.createdAt,
+      user: {
+        name: payload.user.name,
+      },
+      customerName: payload.order.customerName,
+      orderType: payload.order.orderType,
+      items: payload.order.items,
+      subtotal: payload.order.total,
+      discount: 0,
+      totalAdjustedPrice: payload.order.total,
+      payment_method: (payload.order.payment_method).toUpperCase(),
+      paidAmount: payload.order.paidAmount,
+      changeAmount: payload.order.changeAmount,
+      total: payload.order.total,
+    };
+
+    const receiptData = {
+      tenantName: tenant.name || "-",
+      tenantAddress: tenant.address || "-",
+      tenantPhone: tenant.phone || "-",
+      invoiceNo: order.invoiceNo || order.id.slice(0, 8).toUpperCase(),
+      createdAt: order.createdAt,
+      cashierName: order.user?.name || "Kasir",
+      customerName: order.customerName,
+      orderType: order.orderType || "DINE_IN",
+      items: order.items.map((item: any) => ({
+        name: item.product?.name || "Item",
+        qty: item.qty,
+        price: item.price,
+        subtotal: item.subtotal,
+        note: item.note,
+      })),
+      subtotal: order.subtotal || order.total,
+      discount: order.discount || 0,
+      grandTotal: order.totalAdjustedPrice || order.total,
+      paymentMethod: order.payment_method || "CASH",
+      paidAmount: order.paidAmount || order.total,
+      changeAmount: order.changeAmount || 0,
+    };
+
+    printReceipt(receiptData, "58mm");
+  };
+
   const handleConfirmOrders = () => {
     postConfirmOrders(cart);
+    setIsConfirmLoading(true)
   };
 
   const playSuccessSound = () => {
@@ -422,6 +506,38 @@ export default function CreateOrderPage() {
         </div>
 
         <div className="p-4 bg-gray-50 border-t border-gray-100 space-y-4">
+          {/* 💡 1. PILIHAN TIPE PESANAN (DINE IN / TAKEAWAY) */}
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+              Tipe Pesanan
+            </label>
+            <div className="grid grid-cols-2 gap-1.5 p-1 bg-gray-200/70 rounded-xl">
+              <button
+                type="button"
+                onClick={() => setOrderType("DINE_IN")}
+                className={`py-2 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                  orderType === "DINE_IN"
+                    ? "bg-white text-gray-800 shadow-xs"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                <span></span> Dine In
+              </button>
+              <button
+                type="button"
+                onClick={() => setOrderType("TAKEAWAY")}
+                className={`py-2 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                  orderType === "TAKEAWAY"
+                    ? "bg-white text-gray-800 shadow-xs"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                <span></span> Take Away
+              </button>
+            </div>
+          </div>
+
+          {/* 2. RINCIAN TOTAL HARGA */}
           <div className="space-y-1.5 text-xs">
             <div className="flex justify-between text-gray-500">
               <span>Subtotal</span>
@@ -443,21 +559,31 @@ export default function CreateOrderPage() {
             </div>
           </div>
 
+          {/* 3. PILIHAN METODE PEMBAYARAN */}
           <div className="grid grid-cols-2 gap-2">
             <button
-              className={`py-2.5 bg-white border-2 ${paymentMethod === "cash" ? "border-[#0F766E] text-[#0F766E]" : "bg-white border border-gray-200 text-gray-400"} font-bold text-xs rounded-xl flex items-center justify-center gap-1 shadow-sm`}
+              className={`py-2.5 bg-white border-2 ${
+                paymentMethod === "cash"
+                  ? "border-[#0F766E] text-[#0F766E]"
+                  : "bg-white border border-gray-200 text-gray-400"
+              } font-bold text-xs rounded-xl flex items-center justify-center gap-1 shadow-xs cursor-pointer`}
               onClick={() => setPaymentMethod("cash")}
             >
               CASH
             </button>
             <button
-              className={`py-2.5 bg-white border-2 ${paymentMethod === "qris" ? "border-[#0F766E] text-[#0F766E]" : "bg-white border border-gray-200 text-gray-400"} font-bold text-xs rounded-xl flex items-center justify-center gap-1 shadow-sm`}
+              className={`py-2.5 bg-white border-2 ${
+                paymentMethod === "qris"
+                  ? "border-[#0F766E] text-[#0F766E]"
+                  : "bg-white border border-gray-200 text-gray-400"
+              } font-bold text-xs rounded-xl flex items-center justify-center gap-1 shadow-xs cursor-pointer`}
               onClick={() => setPaymentMethod("qris")}
             >
               QRIS
             </button>
           </div>
 
+          {/* 4. INPUT METODE CASH */}
           {paymentMethod === "cash" && totals.totalFinal > 0 && (
             <div className="p-3 bg-white border border-gray-200 rounded-xl space-y-3 shadow-inner">
               {/* Input Uang Diterima & Tombol Uang Pas */}
@@ -475,28 +601,30 @@ export default function CreateOrderPage() {
                   />
                 </div>
                 <button
+                  type="button"
                   onClick={() => setCashReceived(totals.totalFinal.toString())}
-                  className="px-3 py-2 bg-teal-50 hover:bg-teal-100 text-[#0F766E] font-extrabold text-[10px] rounded-lg border border-teal-200 transition-colors uppercase whitespace-nowrap"
+                  className="px-3 py-2 bg-teal-50 hover:bg-teal-100 text-[#0F766E] font-extrabold text-[10px] rounded-lg border border-teal-200 transition-colors uppercase whitespace-nowrap cursor-pointer"
                 >
                   Uang Pas
                 </button>
               </div>
 
-              {/* Tombol Nominal Cepat (Denominasi Rupiah Umum) */}
+              {/* Tombol Nominal Cepat */}
               <div className="flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
                 {[20000, 50000, 100000].map((nominal) => (
                   <button
                     key={nominal}
+                    type="button"
                     disabled={nominal < totals.totalFinal}
                     onClick={() => setCashReceived(nominal.toString())}
-                    className="flex-1 py-1.5 bg-gray-50 hover:bg-gray-100 disabled:opacity-40 disabled:hover:bg-gray-50 border border-gray-200 text-gray-600 font-bold text-[10px] rounded-lg transition-colors whitespace-nowrap"
+                    className="flex-1 py-1.5 bg-gray-50 hover:bg-gray-100 disabled:opacity-40 disabled:hover:bg-gray-50 border border-gray-200 text-gray-600 font-bold text-[10px] rounded-lg transition-colors whitespace-nowrap cursor-pointer"
                   >
                     Rp {nominal.toLocaleString("id-ID")}
                   </button>
                 ))}
               </div>
 
-              {/* Display Dinamis Uang Kembalian */}
+              {/* Display Uang Kembalian */}
               {cashSummary.received > 0 && (
                 <div className="pt-2 border-t border-dashed border-gray-100 flex justify-between items-center text-xs">
                   <span className="text-gray-400 font-medium">
@@ -521,20 +649,73 @@ export default function CreateOrderPage() {
             </div>
           )}
 
+          {/* 5. TOGGLE CETAK STRUK OTOMATIS */}
+          <div className="flex items-center justify-between p-2.5 bg-white border border-gray-200 rounded-xl shadow-xs">
+            <div className="flex items-center gap-2">
+              <svg
+                className="w-4 h-4 text-[#0F766E]"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 000-4H9a2 2 0 000 4zm8-12V5a2 2 0 00-2-2H7a2 2 0 00-2 2v4h14z"
+                />
+              </svg>
+              <span className="text-xs font-bold text-gray-700">
+                Cetak Struk
+              </span>
+            </div>
+
+            <button
+              type="button"
+              role="switch"
+              aria-checked={isPrintReceipt}
+              onClick={() => setIsPrintReceipt(!isPrintReceipt)}
+              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                isPrintReceipt ? "bg-[#0F766E]" : "bg-gray-300"
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out ${
+                  isPrintReceipt ? "translate-x-4" : "translate-x-0"
+                }`}
+              />
+            </button>
+          </div>
+
+          {/* 6. ACTION BUTTONS (INIT & CONFIRM) */}
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={handleInitOrders}
-              disabled={cart.length === 0 || !!orderUuid}
-              className="w-full py-4 bg-[#EF5B2B] text-white font-black text-sm uppercase tracking-wider rounded-xl shadow-md hover:bg-[#d64e22] disabled:bg-gray-300 disabled:shadow-none transition-all"
+              disabled={cart.length === 0 || !!orderUuid || isPreConfirmLoading}
+              className="w-full py-4 bg-[#EF5B2B] text-white font-black text-sm uppercase tracking-wider rounded-xl shadow-md hover:bg-[#d64e22] disabled:bg-gray-300 disabled:shadow-none transition-all cursor-pointer flex items-center justify-center"
             >
-              Init
+              {isPreConfirmLoading ? (
+                <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              ) : (
+                "Init"
+              )}
             </button>
+
             <button
-              onClick={handleConfirmOrders}
-              disabled={!orderUuid}
-              className="w-full py-4 bg-[#EF5B2B] text-white font-black text-sm uppercase tracking-wider rounded-xl shadow-md hover:bg-[#d64e22] disabled:bg-gray-300 disabled:shadow-none transition-all"
+              onClick={() =>
+                handleConfirmOrders()
+              }
+              disabled={
+                !orderUuid ||
+                (paymentMethod === "cash" && cashSummary.isShortage)
+              }
+              className="w-full py-4 bg-[#EF5B2B] text-white font-black text-sm uppercase tracking-wider rounded-xl shadow-md hover:bg-[#d64e22] disabled:bg-gray-300 disabled:shadow-none transition-all cursor-pointer flex items-center justify-center"
             >
-              Confirm
+              {isConfirmLoading ? (
+                <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              ) : (
+                "Confirm"
+              )}
             </button>
           </div>
         </div>

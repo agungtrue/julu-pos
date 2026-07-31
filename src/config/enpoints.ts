@@ -24,6 +24,7 @@ export const endpoints = {
     summary: {
       get: `${BASE_URL}/orders/summary`,
     },
+    delete: (id: string) => `${BASE_URL}/orders/${id}`,
     order: {
       init: `${BASE_URL}/orders/init`,
       confirm: `${BASE_URL}/orders/confirm`,
