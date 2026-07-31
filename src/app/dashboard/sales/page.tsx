@@ -7,7 +7,8 @@ import { formatJuluDate } from "../../../lib/utils";
 import { endpoints } from "../../../config/enpoints";
 import DashboardSkeleton from "@/components/DashboardSkeleton";
 import { Search } from "lucide-react";
-import { useAuthStore } from '@/stores/authStore';
+import { useAuthStore } from "@/stores/authStore";
+import dayjs from "dayjs";
 
 interface TransactionDetail {
   name: string;
@@ -69,25 +70,90 @@ export default function SalesLogPage() {
   // report
   const [isOpen, setIsOpen] = useState(false);
   const [selectedRange, setSelectedRange] = useState("today"); // today, this_month, last_month, custom
-  const [customStartDate, setCustomStartDate] = useState("");
-  const [customEndDate, setCustomEndDate] = useState("");
+  const [customStartDate, setCustomStartDate] = useState(
+    dayjs().format("YYYY-MM-DD"),
+  );
+  const [customEndDate, setCustomEndDate] = useState(
+    dayjs().format("YYYY-MM-DD"),
+  );
+  const [isExporting, setIsExporting] = useState(false);
+
+  const getDateRange = () => {
+    let startDate = "";
+    let endDate = "";
+
+    switch (selectedRange) {
+      case "today":
+        startDate = dayjs().format("YYYY-MM-DD");
+        endDate = dayjs().format("YYYY-MM-DD");
+        break;
+
+      case "this_month":
+        startDate = dayjs().startOf("month").format("YYYY-MM-DD");
+        endDate = dayjs().endOf("month").format("YYYY-MM-DD");
+        break;
+
+      case "last_month":
+        startDate = dayjs()
+          .subtract(1, "month")
+          .startOf("month")
+          .format("YYYY-MM-DD");
+        endDate = dayjs()
+          .subtract(1, "month")
+          .endOf("month")
+          .format("YYYY-MM-DD");
+        break;
+
+      case "custom":
+        startDate = customStartDate;
+        endDate = customEndDate;
+        break;
+
+      default:
+        startDate = dayjs().format("YYYY-MM-DD");
+        endDate = dayjs().format("YYYY-MM-DD");
+    }
+
+    return { startDate, endDate };
+  };
 
   // Handler utama saat tombol ekspor di dalam modal ditekan
-  const handleExportSubmit = (e: React.FormEvent) => {
+  const handleExportSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsExporting(true);
 
-    // Payload siap lempar ke logic date eksisting Anda
-    const payload = {
-      rangeType: selectedRange,
-      startDate: selectedRange === "custom" ? customStartDate : null,
-      endDate: selectedRange === "custom" ? customEndDate : null,
-    };
+    try {
+      const { startDate, endDate } = getDateRange();
 
-    // console.log("Triggering export with payload:", payload);
+      const url = endpoints.orders.salesReport
+      const response = await api.get(url, {
+        params: { startDate, endDate },
+        responseType: "blob",
+      });
 
-    // Jalankan fungsi export logic Anda di sini...
+      const blob = new Blob([response.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.setAttribute(
+        "download",
+        `Laporan_Penjualan_${startDate}_sd_${endDate}.xlsx`,
+      );
 
-    setIsOpen(false);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+
+      setIsOpen(false);
+    } catch (error) {
+      console.error("Gagal mendownload laporan sales:", error);
+      alert("Gagal mengunduh laporan penjualan. Silakan coba lagi.");
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   if (isLoading) return <DashboardSkeleton />;
@@ -101,12 +167,10 @@ export default function SalesLogPage() {
     }).format(num);
   };
 
-  // Hitung total item kumulatif dalam satu invoice untuk display kartu luar
   const getTotalItemsCount = (items: TransactionItem[]) => {
     return items.reduce((acc, curr) => acc + curr.qty, 0);
   };
 
-  // Helper penggabung string nama item untuk ringkasan feed luar
   const getItemsSummaryString = (items: TransactionItem[]) => {
     return items.map((i) => `${i.qty}x ${i.product.name}`).join(", ");
   };
@@ -116,7 +180,6 @@ export default function SalesLogPage() {
     setIsModalOpen(true);
   };
 
-  // Logika Filter Penjualan
   const transactions = transactionsData.filter((tx: Transaction) => {
     const summaryText = getItemsSummaryString(tx.items).toLowerCase();
     const matchesSearch =
@@ -136,8 +199,6 @@ export default function SalesLogPage() {
             Riwayat Transaksi Penjualan
           </h1>
           <p className="text-xs text-gray-400 mt-1 font-medium uppercase tracking-wider">
-            {/* Aliran data real-time tersinkronisasi langsung dari Julu POS Mobile
-            App */}
             Pantau dan validasi penjualan
           </p>
         </div>
@@ -194,7 +255,7 @@ export default function SalesLogPage() {
                 d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
               />
             </svg>
-            Export Laporan
+            Unduh Laporan
           </button>
         </div>
       </div>
@@ -303,7 +364,7 @@ export default function SalesLogPage() {
                 J
               </div>
               <h3 className="font-black text-gray-800 text-sm uppercase tracking-wide">
-                {user?.tenant?.name || ''}
+                {user?.tenant?.name || ""}
               </h3>
               <p className="text-[10px] text-gray-400 font-mono mt-0.5">
                 {selectedTx.invoiceNumber}
@@ -512,13 +573,13 @@ export default function SalesLogPage() {
                     <input
                       type="radio"
                       name="range"
-                      value="custom"
                       checked={selectedRange === "custom"}
+                      value="custom"
                       onChange={() => setSelectedRange("custom")}
                       className="w-4 h-4 accent-[#0A8F8A]"
                     />
                     <span className="text-sm">
-                      Pilih Tanggal Kustom (Get by Date)
+                      Pilih Tanggal Kustom
                     </span>
                   </div>
                 </label>
@@ -561,30 +622,27 @@ export default function SalesLogPage() {
                 <button
                   type="button"
                   onClick={() => setIsOpen(false)}
-                  className="px-4 py-2 text-sm font-semibold text-gray-500 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all"
+                  disabled={isExporting}
+                  className="px-4 py-2 text-sm font-semibold text-gray-500 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all cursor-pointer"
                 >
                   Batal
                 </button>
 
-                {/* Tombol Konfirmasi - Orange Julu */}
                 <button
                   type="submit"
-                  className="px-5 py-2.5 bg-[#EF5B2B] hover:bg-[#d64a20] text-white text-sm font-semibold rounded-xl transition-all duration-200 shadow-md flex items-center gap-1.5"
+                  disabled={isExporting}
+                  className="px-5 py-2.5 bg-[#EF5B2B] hover:bg-[#d64a20] text-white text-sm font-semibold rounded-xl transition-all duration-200 shadow-md flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
                 >
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2.5"
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  Export Sekarang
+                  {isExporting ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                      Mengunduh...
+                    </>
+                  ) : (
+                    <>
+                      Unduh Sekarang
+                    </>
+                  )}
                 </button>
               </div>
             </form>

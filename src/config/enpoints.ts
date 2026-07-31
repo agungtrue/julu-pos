@@ -32,6 +32,7 @@ export const endpoints = {
       get: (query: string) => `${BASE_URL}/orders/summary?${query}`,
     },
     getAll: `${BASE_URL}/orders`,
+    salesReport: `${BASE_URL}/orders/sales-report`,
   },
   products: {
     getWithIngredients: `${BASE_URL}/products?withIngredients=true`,
