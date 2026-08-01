@@ -145,6 +145,7 @@ export default function HppSystemPage() {
     onSuccess: () => {
       setIsEditBahanBakuModalOpen(false);
       setIsSaving(false);
+      setAddedStock(0)
 
       queryClient.invalidateQueries({ queryKey: ["ingredientsData"] });
       queryClient.invalidateQueries({ queryKey: ["productData", "cogs"] });
@@ -206,10 +207,14 @@ export default function HppSystemPage() {
   const [isEditBahanBakuModalOpen, setIsEditBahanBakuModalOpen] =
     useState(false);
   const [editingRecipe, setEditingRecipe] = useState<RecipeItem | null>(null);
+  const [addedStock, setAddedStock] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const [selectedNewIngredientId, setSelectedNewIngredientId] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchQueryRecipe, setsSearchQueryRecipe] = useState("");
+
+  const numericAddedStock = Number(addedStock) || 0;
+  const previewTotalStock = (editIngredient?.stock || 0) + numericAddedStock;
 
   const formatIDR = (num: number) => {
     return new Intl.NumberFormat("id-ID", {
@@ -346,7 +351,7 @@ export default function HppSystemPage() {
       purchase_cost: editIngredient.purchase_cost,
       conversion_factor: editIngredient.conversion_factor,
       unit: editIngredient.unit,
-      stock: editIngredient.stock,
+      stock: (editIngredient.stock + addedStock),
       minimumStock: editIngredient.minimumStock,
     });
   };
@@ -355,7 +360,7 @@ export default function HppSystemPage() {
     const matchesSearch = p.name
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
-    
+
     return matchesSearch;
   });
 
@@ -363,7 +368,7 @@ export default function HppSystemPage() {
     const matchesSearch = p.name
       .toLowerCase()
       .includes(searchQueryRecipe.toLowerCase());
-    
+
     return matchesSearch;
   });
 
@@ -1127,6 +1132,15 @@ export default function HppSystemPage() {
               </button>
             </div>
 
+            <div className="p-3.5 bg-gray-50 rounded-2xl border border-gray-100 flex justify-between items-center">
+              <span className="text-xs font-semibold text-gray-500">
+                Stok Saat Ini:
+              </span>
+              <span className="text-sm font-black text-gray-800 font-mono">
+                {editIngredient.stock} {editIngredient.unit}
+              </span>
+            </div>
+
             {/* Input Nama Menu & Harga Jual Kasir */}
             <div className="grid grid-cols-2 gap-3 mb-4">
               <div>
@@ -1211,19 +1225,20 @@ export default function HppSystemPage() {
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1.5">
-                  Stock
+                  Tambah Stock
                 </label>
                 <input
                   type="number"
                   required
                   placeholder="Ex: 5000"
-                  value={editIngredient.stock}
-                  onChange={(e) =>
-                    setEditIngredient({
-                      ...editIngredient,
-                      stock: Number(e.target.value),
-                    })
-                  }
+                  value={addedStock}
+                  onChange={(e) => {
+                    // setEditIngredient({
+                    //   ...editIngredient,
+                    //   stock: Number(e.target.value),
+                    // })
+                    setAddedStock(Number(e.target.value))
+                  }}
                   className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#0F766E] font-mono font-bold text-gray-800"
                 />
               </div>
@@ -1245,6 +1260,19 @@ export default function HppSystemPage() {
                   className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#0F766E] font-mono font-bold text-gray-800"
                 />
               </div>
+
+              {/* 3. DISPLAY PREVIEW TOTAL STOK AKHIR */}
+              {numericAddedStock > 0 && (
+                <div className="p-1.5 bg-teal-50/60 border border-teal-100 rounded-2xl flex justify-between items-center text-xs">
+                  <span className="text-[#0F766E] font-medium">
+                    Kalkulasi Stok Akhir:
+                  </span>
+                  <span className="font-black text-sm text-[#0F766E] font-mono flex flex-end">
+                    {editIngredient.stock} + {numericAddedStock} ={" "}
+                    {previewTotalStock} {editIngredient.unit}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Action Buttons */}
@@ -1271,7 +1299,7 @@ export default function HppSystemPage() {
           </form>
         </div>
       )}
-    <ScrollToTop />
+      <ScrollToTop />
     </div>
   );
 }
