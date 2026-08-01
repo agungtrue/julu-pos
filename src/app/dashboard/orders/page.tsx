@@ -242,6 +242,7 @@ export default function CreateOrderPage() {
       paidAmount: payload.order.paidAmount,
       changeAmount: payload.order.changeAmount,
       total: payload.order.total,
+      receiptFooter: payload.user.subscription.tenant.receiptFooter,
     };
 
     const receiptData = {
@@ -266,6 +267,7 @@ export default function CreateOrderPage() {
       paymentMethod: order.payment_method || "CASH",
       paidAmount: order.paidAmount || order.total,
       changeAmount: order.changeAmount || 0,
+      footerNote: order.receiptFooter
     };
 
     printReceipt(receiptData, "58mm");
