@@ -46,7 +46,8 @@ export default function SubscriptionExpiredPage() {
       const id = user?.tenant?.id || ''
       const url = endpoints.tenants.status(id);
 
-      await api.get(url);
+      const response = await api.get(url);
+      return response.data;
     },
     retry: false,
   });

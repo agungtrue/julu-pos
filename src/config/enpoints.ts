@@ -1,8 +1,12 @@
-let BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.julucoffee.com';
-console.log({ api: process.env.NEXT_PUBLIC_API_URL, baseUrl: BASE_URL, env: process.env.NODE_ENV })
+let BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.julucoffee.com";
+console.log({
+  api: process.env.NEXT_PUBLIC_API_URL,
+  baseUrl: BASE_URL,
+  env: process.env.NODE_ENV,
+});
 
-if (process.env.NODE_ENV === 'development') {
-  BASE_URL = 'http://julu-pos.localhost:3006'
+if (process.env.NODE_ENV === "development") {
+  BASE_URL = "http://julu-pos.localhost:3006";
 }
 
 export const endpoints = {
@@ -16,9 +20,15 @@ export const endpoints = {
     patch: (id: string) => `${BASE_URL}/ingredients/${id}`,
     delete: (id: string) => `${BASE_URL}/ingredients/${id}`,
     recipe: {
-        get: (id: string) => `${BASE_URL}/ingredients/recipe/${id}`,
-        post: `${BASE_URL}/ingredients/recipe`,
-    }
+      get: (id: string) => `${BASE_URL}/ingredients/recipe/${id}`,
+      post: `${BASE_URL}/ingredients/recipe`,
+    },
+  },
+  ingredientMutation: {
+    get: `${BASE_URL}/ingredients/mutations`,
+    restock: `${BASE_URL}/ingredients/mutations/restock`,
+    loss: `${BASE_URL}/ingredients/mutations/loss`,
+    summary: `${BASE_URL}/ingredients/mutations/summary`,
   },
   orders: {
     summary: {
@@ -64,11 +74,13 @@ export const endpoints = {
     plans: `${BASE_URL}/subscription-plans`,
     checkout: `${BASE_URL}/subscription-invoices/checkout`,
     activePending: `${BASE_URL}/subscription-invoices/active-pending`,
-    invoiceDetail: (invoiceNumber: string) => `${BASE_URL}/subscription-invoices/detail/${invoiceNumber}`,
+    invoiceDetail: (invoiceNumber: string) =>
+      `${BASE_URL}/subscription-invoices/detail/${invoiceNumber}`,
     invoiceList: `${BASE_URL}/subscription-invoices/admin/invoice-list`,
-    approve: (invoiceId: string) => `${BASE_URL}/subscription-invoices/${invoiceId}/approve`,
+    approve: (invoiceId: string) =>
+      `${BASE_URL}/subscription-invoices/${invoiceId}/approve`,
     admin: {
       dashboarStats: `${BASE_URL}/subscription-invoices/admin/dashboard-stats`,
-    }
-  }
+    },
+  },
 };

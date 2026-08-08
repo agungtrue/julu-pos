@@ -30,7 +30,7 @@ interface User {
 }
 interface Transaction {
   id: string;
-  invoiceNumber: string;
+  invoiceNo: string;
   createdAt: string;
   items: TransactionItem[];
   discountAmount: number;
@@ -424,8 +424,8 @@ export default function SalesLogPage() {
               <h3 className="font-black text-gray-800 text-sm uppercase tracking-wide">
                 {user?.tenant?.name || ""}
               </h3>
-              <p className="text-[10px] text-gray-400 font-mono mt-0.5">
-                {selectedTx.invoiceNumber}
+              <p className="text-[12px] text-gray-400 font-mono mt-0.5">
+                {selectedTx.invoiceNo}
               </p>
             </div>
 
