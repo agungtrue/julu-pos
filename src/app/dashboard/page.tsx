@@ -10,7 +10,7 @@ import { useAuthStore } from "@/stores/authStore";
 import { LowStockModal } from "@/components/LowStockModal";
 import { getPeriodLabel } from "@/lib/utils";
 import ScrollToTop from "@/components/ScrollToTop";
-import Link from 'next/link'
+import Link from "next/link";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -145,12 +145,17 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">
-            Halo {user?.name} - Ringkasan Performa
+        <div className="relative pl-3.5 border-l-4 border-teal-600">
+          <h1 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-2">
+            <span >Halo, {user?.name}</span>
+            <span className="text-gray-300 font-light">|</span>
+            <span className="text-teal-700 text-lg font-bold">
+              Ringkasan Performa
+            </span>
           </h1>
-          <p className="text-xs text-gray-400 font-medium mt-1">
-            PERIODE LAPORAN: {getPeriodLabel(timeFilter)} • {user?.tenant?.name}
+
+          <p className="text-xs text-gray-400 font-medium mt-0.5">
+            PERIODE: {getPeriodLabel(timeFilter)} • {user?.tenant?.name}
           </p>
         </div>
         <div className="bg-white border border-gray-200 px-4 py-2.5 rounded-2xl flex items-center gap-3 w-fit shadow-sm">
@@ -228,7 +233,6 @@ export default function DashboardPage() {
           </div> */}
         </div>
 
-        {/* 💡 3. RIGHT SIDE: BADGE INFO SUBSCRIPTION (POJOK KANAN SELARAS) */}
         {user?.role === "OWNER_ADMIN" && (
           <div className="flex items-center gap-2.5 bg-gradient-to-r from-teal-50/90 to-emerald-50/80 border border-teal-100/80 px-3.5 py-2 rounded-xl self-end md:self-center shadow-2xs">
             {/* Indicator Dot (Hijau Pulse) */}
@@ -243,7 +247,6 @@ export default function DashboardPage() {
               </span>
               <span className="text-gray-300">•</span>
 
-              {/* 🚀 Badge yang langsung bisa diklik ke /billing */}
               <Link
                 href="/billing"
                 title="Klik untuk perpanjang langganan"
@@ -267,7 +270,6 @@ export default function DashboardPage() {
       {/* OWNER_ADMIN */}
       {user?.role === "OWNER_ADMIN" && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* CARD 1: REVENUE */}
           <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
             <div>
               <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
@@ -292,7 +294,21 @@ export default function DashboardPage() {
             {/* Target Amount: {formatIDR(summary?.breakEvenRevenue.targetAmount)} */}
           </div>
 
-          {/* CARD 2: GROSS INCOME */}
+          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
+            <div>
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+                Total Biaya Bahan Baku (HPP)
+              </span>
+              <h3 className="text-2xl font-black text-gray-800 tracking-tight">
+                {formatIDR(summary?.revenues - summary?.grossIncomes)}
+              </h3>
+            </div>
+            <p className="text-xs text-[#0F766E] font-bold bg-[#0F766E]/5 px-2.5 py-1 rounded-lg w-fit">
+              Rasio HPP:{" "}
+              {Math.floor(summary?.marginPercentages?.cogsMargin)}%
+            </p>
+          </div>
+
           <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
             <div>
               <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
@@ -308,11 +324,43 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          {/* CARD 3: NET INCOME */}
           <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden sm:col-span-2 lg:col-span-1">
             <div>
               <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-                Pendapatan Bersih (Net)
+                Biaya Operasional Harian
+              </span>
+              <h3 className={`text-2xl font-black tracking-tight text-red-500`}>
+                {formatIDR(summary?.opex?.dailyAmount)}
+              </h3>
+            </div>
+            <p className="text-xs text-gray-400 font-medium">
+              {/* Sisa target ke profit: <span className="text-red-500 font-bold">{formatIDR(Math.floor(summary?.breakEvenRevenue?.excessRevenueAmount))} lagi</span> */}
+            </p>
+          </div>
+
+          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
+            <div>
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+                Total Loss Bahan Baku/Operasional
+              </span>
+              <h3 className="text-2xl font-black text-red-500 tracking-tight">
+                {formatIDR(Math.abs(summary?.lossMutation?.totalNominal))}
+              </h3>
+            </div>
+
+            <div>
+              <p className="text-xs text-gray-400 font-medium">
+              <span className="text-red-500 font-semibold">
+                {summary?.lossMutation?.count}x
+              </span> Catatan
+            </p>
+            </div>
+          </div>
+
+          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden sm:col-span-2 lg:col-span-1">
+            <div>
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+                Keuntungan Bersih
               </span>
               <h3
                 className={`text-2xl font-black tracking-tight ${summary?.netIncomes < 0 ? "text-red-500" : "text-green-600"}`}
@@ -348,7 +396,7 @@ export default function DashboardPage() {
           <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
             <div>
               <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-                Orders
+                Total Pesanan
               </span>
               <h3 className="text-2xl font-black text-[#0F766E] tracking-tight">
                 {summary?.transactions}
@@ -362,7 +410,7 @@ export default function DashboardPage() {
           <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
             <div>
               <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-                Cups/Target Cups
+                Cup Terjual/Target Cup
               </span>
               <h3 className="text-2xl font-black text-gray-800 tracking-tight">
                 {summary?.cups.total}/
@@ -372,27 +420,13 @@ export default function DashboardPage() {
 
             <div>
               <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-                Snacks/Target Snacks
+                Cemilan terjual/Target Cemilan
               </span>
               <h3 className="text-2xl font-black text-gray-800 tracking-tight">
                 {summary?.snacks}/
                 {Math.ceil(summary?.breakEvenRevenue?.targetSnackCount)}
               </h3>
             </div>
-          </div>
-
-          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden sm:col-span-2 lg:col-span-1">
-            <div>
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-                Daily Opex
-              </span>
-              <h3 className={`text-2xl font-black tracking-tight text-red-500`}>
-                {formatIDR(summary?.opex?.dailyAmount)}
-              </h3>
-            </div>
-            <p className="text-xs text-gray-400 font-medium">
-              {/* Sisa target ke profit: <span className="text-red-500 font-bold">{formatIDR(Math.floor(summary?.breakEvenRevenue?.excessRevenueAmount))} lagi</span> */}
-            </p>
           </div>
 
           <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
@@ -411,26 +445,6 @@ export default function DashboardPage() {
               </span>
               <h3 className="text-2xl font-black text-[#0F766E] tracking-tight">
                 {formatIDR(summary?.paymentMethods?.amounts?.qris)}
-              </h3>
-            </div>
-          </div>
-
-          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
-            <div>
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-                Total Loss Bahan Baku
-              </span>
-              <h3 className="text-2xl font-black text-red-500 tracking-tight">
-                {formatIDR(summary?.lossMutation?.totalNominal)}
-              </h3>
-            </div>
-
-            <div>
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-                Jumlah
-              </span>
-              <h3 className="text-2xl font-black text-red-500 tracking-tight">
-                {summary?.lossMutation?.count}
               </h3>
             </div>
           </div>
@@ -465,54 +479,6 @@ export default function DashboardPage() {
             {/* Target Amount: {formatIDR(summary?.breakEvenRevenue.targetAmount)} */}
           </div>
 
-          {/* CARD 2: GROSS INCOME */}
-          {/* <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
-          <div>
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-              Keuntungan Kotor (Gross)
-            </span>
-            <h3 className="text-2xl font-black text-gray-800 tracking-tight">
-              {formatIDR(summary?.grossIncomes)}
-            </h3>
-          </div>
-          <p className="text-xs text-[#0F766E] font-bold bg-[#0F766E]/5 px-2.5 py-1 rounded-lg w-fit">
-            Gross Margin: {Math.floor(summary?.marginPercentages?.grossMargin)}%
-          </p>
-        </div> */}
-
-          {/* CARD 3: NET INCOME */}
-          {/* <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden sm:col-span-2 lg:col-span-1">
-          <div>
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-              Pendapatan Bersih (Net)
-            </span>
-            <h3
-              className={`text-2xl font-black tracking-tight ${summary?.netIncomes < 0 ? "text-red-500" : "text-green-600"}`}
-            >
-              {formatIDR(summary?.netIncomes)}
-            </h3>
-          </div>
-          <span className="text-xs text-gray-400 font-medium">
-            {summary?.breakEvenRevenue?.excessRevenueAmount < 0 ? (
-              <>
-                Sisa target ke profit:{" "}
-                <span className="text-red-500 font-bold">
-                  {formatIDR(
-                    Math.floor(summary?.breakEvenRevenue?.excessRevenueAmount),
-                  )}{" "}
-                  lagi
-                </span>
-              </>
-            ) : (
-              <p className="text-xs text-green-600 font-bold bg-[#0F766E]/5 px-2.5 py-1 rounded-lg w-fit">
-                Profitable:{" "}
-                {Math.floor(summary?.breakEvenRevenue?.excessRevenuePercentage)}
-                %
-              </p>
-            )}
-          </span>
-        </div> */}
-
           <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
             <div>
               <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
@@ -568,30 +534,15 @@ export default function DashboardPage() {
               </h3>
             </div>
           </div>
-
-          {/* <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden sm:col-span-2 lg:col-span-1">
-          <div>
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-              Daily Opex
-            </span>
-            <h3 className={`text-2xl font-black tracking-tight text-red-500`}>
-              {formatIDR(summary?.opex?.dailyAmount)}
-            </h3>
-          </div>
-          <p className="text-xs text-gray-400 font-medium">
-          </p>
-        </div> */}
         </div>
       )}
 
       {/* Stat Box Trigger untuk Dashboard Grid */}
       <div
         onClick={() => {
-          // Hanya buka modal jika ada stok yang menipis
           if (summary?.stockAlerts?.length > 0) {
             setIsLowStockModalOpen(true);
           }
-          //   setIsLowStockModalOpen(true);
         }}
         className={`bg-white border rounded-2xl p-5 shadow-sm transition-all flex items-center justify-between group ${
           summary?.stockAlerts?.length > 0
@@ -642,7 +593,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Status Indicator / Action Arrow */}
         {summary?.stockAlerts?.length > 0 ? (
           <div className="flex items-center gap-1 text-xs font-bold text-amber-600 bg-amber-100/60 px-3 py-1.5 rounded-xl group-hover:bg-amber-600 group-hover:text-white transition-all">
             <span>Lihat Detail</span>
@@ -667,16 +617,13 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* 📊 QUANTITY METRICS & BEST SELLERS SECTION */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* KOLOM KIRI: VOLUME PRODUK TERJUAL */}
         <div className="lg:col-span-1 bg-white border border-gray-100 p-6 rounded-3xl shadow-sm">
           <h4 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-6 border-l-4 border-[#0F766E] pl-3">
             Volume Distribusi
           </h4>
 
           <div className="space-y-5">
-            {/* CUPS INFO */}
             <div className="bg-gray-50/60 border border-gray-100 p-4 rounded-2xl">
               <div className="flex justify-between items-center mb-3">
                 <span className="text-sm font-bold text-gray-700">
@@ -702,7 +649,6 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* SNACKS INFO */}
             <div className="bg-gray-50/60 border border-gray-100 p-4 rounded-2xl flex justify-between items-center">
               <span className="text-sm font-bold text-gray-700">
                 Cemilan / Snacks
@@ -712,7 +658,6 @@ export default function DashboardPage() {
               </span>
             </div>
 
-            {/* METRICS SUMMARY */}
             <div className="border-t border-gray-100 pt-4 space-y-2.5 text-xs text-gray-500 font-medium">
               <div className="flex justify-between">
                 <span>Rata-rata Belanja Pelanggan:</span>
@@ -733,7 +678,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* KOLOM KANAN: TOP 5 PRODUCT LEADERBOARD */}
         <div className="lg:col-span-2 bg-white border border-gray-100 p-6 rounded-3xl shadow-sm">
           <h4 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-6 border-l-4 border-[#EF5B2B] pl-3">
             Menu Paling Laris (Best Seller)
@@ -763,7 +707,6 @@ export default function DashboardPage() {
                     {item.count} Porsi ({Math.ceil(item.percentage)}%)
                   </span>
                 </div>
-                {/* Custom Progress Bar Chart */}
                 <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all duration-500 ${
@@ -782,7 +725,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Modal Component */}
       <LowStockModal
         isOpen={isLowStockModalOpen}
         onClose={() => setIsLowStockModalOpen(false)}
