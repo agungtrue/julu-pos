@@ -214,7 +214,7 @@ export default function StockMutationPage() {
               Total Operational Loss
             </p>
             <h3 className="text-lg sm:text-xl font-black text-rose-600 mt-0.5">
-              Rp {mutationSummary?.loss?.totalAmount?.toLocaleString() || 0}
+              Rp {Math.abs(mutationSummary?.loss?.totalAmount || 0).toLocaleString()}
             </h3>
             <p className="text-[10px] sm:text-[11px] text-slate-500">
               {mutationSummary?.loss?.count || 0} kali Basi, tumpah dll

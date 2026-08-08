@@ -88,7 +88,11 @@ export default function SubscriptionExpiredPage() {
 
   const packages = packagesData ?? [];
 
-  //   console.log({ packages });
+  useEffect(() => {
+    if (packagesData?.length) {
+      setSelectedPackage(packagesData[1].id)
+    }
+  }, [packagesData])
 
   const activePack =
     packages.find((p: any) => p.id === selectedPackage) || packages[1];
@@ -263,9 +267,8 @@ export default function SubscriptionExpiredPage() {
                           </span>
                         </p>
 
-                        {/* 💡 BIAYA PER HARI HIGHLIGHT */}
                         <div className="mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 rounded-md border border-emerald-200/60 text-[10px] font-semibold text-emerald-700">
-                          <span>⚡</span>
+                          {/* <span>⚡</span> */}
                           <span>
                             Cuma{" "}
                             <strong className="font-extrabold text-emerald-800">
