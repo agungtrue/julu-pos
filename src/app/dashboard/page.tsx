@@ -138,9 +138,8 @@ export default function DashboardPage() {
     }).format(num);
   };
 
-  // const remainingDays =
-  //   getRemainingDays(summary?.tenantSubscription?.endDate) ?? 0;
-  const remainingDays = 2;
+  const remainingDays =
+    getRemainingDays(summary?.tenantSubscription?.endDate) ?? 0;
   const isUrgent = remainingDays <= 3;
 
   return (
