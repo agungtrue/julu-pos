@@ -10,6 +10,7 @@ import { useAuthStore } from "@/stores/authStore";
 import { LowStockModal } from "@/components/LowStockModal";
 import { getPeriodLabel } from "@/lib/utils";
 import ScrollToTop from "@/components/ScrollToTop";
+import Link from 'next/link'
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -74,7 +75,7 @@ export default function DashboardPage() {
   };
 
   const fetchSummaryData = async (
-    filter: "today" | "month" | "yesterday" | "last_month" | 'custom',
+    filter: "today" | "month" | "yesterday" | "last_month" | "custom",
   ) => {
     let url = endpoints.orders.summary.get;
 
@@ -136,6 +137,11 @@ export default function DashboardPage() {
       minimumFractionDigits: 0,
     }).format(num);
   };
+
+  // const remainingDays =
+  //   getRemainingDays(summary?.tenantSubscription?.endDate) ?? 0;
+  const remainingDays = 2;
+  const isUrgent = remainingDays <= 3;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
@@ -224,205 +230,244 @@ export default function DashboardPage() {
         </div>
 
         {/* 💡 3. RIGHT SIDE: BADGE INFO SUBSCRIPTION (POJOK KANAN SELARAS) */}
-        {user?.role === "OWNER_ADMIN" && <div className="flex items-center gap-2.5 bg-gradient-to-r from-teal-50/90 to-emerald-50/80 border border-teal-100/80 px-3.5 py-2 rounded-xl self-end md:self-center shadow-2xs">
-          {/* Indicator Dot (Hijau Pulse) */}
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-          </span>
+        {user?.role === "OWNER_ADMIN" && (
+          <div className="flex items-center gap-2.5 bg-gradient-to-r from-teal-50/90 to-emerald-50/80 border border-teal-100/80 px-3.5 py-2 rounded-xl self-end md:self-center shadow-2xs">
+            {/* Indicator Dot (Hijau Pulse) */}
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
 
-          <div className="text-xs flex items-center gap-2">
-            <span className="font-extrabold text-teal-900 tracking-tight text-[14px]">
-              {summary?.tenantSubscription?.plan?.name || "-"}
-            </span>
-            <span className="text-gray-300">•</span>
-            <span className="font-bold text-teal-700 bg-teal-100/60 px-2 py-0.5 rounded-md text-[14px]">
-              {/* Misal hitung sisa hari dari endDate */}
-              Sisa {getRemainingDays(
-                summary?.tenantSubscription?.endDate
-              )}{" "}
-              hari lagi
-            </span>
+            <div className="text-xs flex items-center gap-2">
+              <span className="font-extrabold text-teal-900 tracking-tight text-[14px]">
+                {summary?.tenantSubscription?.plan?.name || "-"}
+              </span>
+              <span className="text-gray-300">•</span>
+
+              {/* 🚀 Badge yang langsung bisa diklik ke /billing */}
+              <Link
+                href="/billing"
+                title="Klik untuk perpanjang langganan"
+                className={`font-bold px-2.5 py-0.5 rounded-md text-[14px] transition-all flex items-center gap-1.5 group hover:shadow-sm ${
+                  isUrgent
+                    ? "bg-rose-100 hover:bg-rose-200 text-rose-700 border border-rose-300 animate-pulse"
+                    : "bg-teal-100/60 hover:bg-teal-200/80 text-teal-800"
+                }`}
+              >
+                <span>Sisa {remainingDays} hari lagi</span>
+                <span className="text-xs font-black underline group-hover:translate-x-0.5 transition-transform">
+                  Perpanjang →
+                </span>
+              </Link>
+            </div>
           </div>
-        </div>}
+        )}
       </div>
 
       {/* 💰 MAIN FINANCIAL CARDS GRID */}
       {/* OWNER_ADMIN */}
-      {user?.role === "OWNER_ADMIN" && <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* CARD 1: REVENUE */}
-        <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
-          <div>
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-              Total Pendapatan
-            </span>
-            <h3 className="text-2xl font-black text-[#0F766E] tracking-tight">
-              {formatIDR(summary?.revenues)}
-            </h3>
+      {user?.role === "OWNER_ADMIN" && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* CARD 1: REVENUE */}
+          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
+            <div>
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+                Total Pendapatan
+              </span>
+              <h3 className="text-2xl font-black text-[#0F766E] tracking-tight">
+                {formatIDR(summary?.revenues)}
+              </h3>
+            </div>
+            <p className="text-xs text-gray-400 font-medium">
+              Rata-rata Harian:{" "}
+              <span className="text-gray-700 font-semibold">
+                {formatIDR(summary?.transactionMetrics.avgRevPerDay)}
+              </span>
+            </p>
+            <p className="text-xs text-gray-400 font-medium">
+              Target:{" "}
+              <span className="text-gray-700 font-semibold">
+                {formatIDR(summary?.breakEvenRevenue.targetAmount)}
+              </span>
+            </p>
+            {/* Target Amount: {formatIDR(summary?.breakEvenRevenue.targetAmount)} */}
           </div>
-          <p className="text-xs text-gray-400 font-medium">
-            Rata-rata Harian:{" "}
-            <span className="text-gray-700 font-semibold">
-              {formatIDR(summary?.transactionMetrics.avgRevPerDay)}
+
+          {/* CARD 2: GROSS INCOME */}
+          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
+            <div>
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+                Keuntungan Kotor (Gross)
+              </span>
+              <h3 className="text-2xl font-black text-gray-800 tracking-tight">
+                {formatIDR(summary?.grossIncomes)}
+              </h3>
+            </div>
+            <p className="text-xs text-[#0F766E] font-bold bg-[#0F766E]/5 px-2.5 py-1 rounded-lg w-fit">
+              Gross Margin:{" "}
+              {Math.floor(summary?.marginPercentages?.grossMargin)}%
+            </p>
+          </div>
+
+          {/* CARD 3: NET INCOME */}
+          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden sm:col-span-2 lg:col-span-1">
+            <div>
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+                Pendapatan Bersih (Net)
+              </span>
+              <h3
+                className={`text-2xl font-black tracking-tight ${summary?.netIncomes < 0 ? "text-red-500" : "text-green-600"}`}
+              >
+                {formatIDR(summary?.netIncomes)}
+              </h3>
+            </div>
+            <span className="text-xs text-gray-400 font-medium">
+              {summary?.breakEvenRevenue?.excessRevenueAmount < 0 ? (
+                <>
+                  Sisa target ke profit:{" "}
+                  <span className="text-red-500 font-bold">
+                    {formatIDR(
+                      Math.floor(
+                        summary?.breakEvenRevenue?.excessRevenueAmount,
+                      ),
+                    )}{" "}
+                    lagi
+                  </span>
+                </>
+              ) : (
+                <p className="text-xs text-green-600 font-bold bg-[#0F766E]/5 px-2.5 py-1 rounded-lg w-fit">
+                  Profitable:{" "}
+                  {Math.floor(
+                    summary?.breakEvenRevenue?.excessRevenuePercentage,
+                  )}
+                  %
+                </p>
+              )}
             </span>
-          </p>
-          <p className="text-xs text-gray-400 font-medium">
-            Target:{" "}
-            <span className="text-gray-700 font-semibold">
-              {formatIDR(summary?.breakEvenRevenue.targetAmount)}
-            </span>
-          </p>
-          {/* Target Amount: {formatIDR(summary?.breakEvenRevenue.targetAmount)} */}
+          </div>
+
+          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
+            <div>
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+                Orders
+              </span>
+              <h3 className="text-2xl font-black text-[#0F766E] tracking-tight">
+                {summary?.transactions}
+              </h3>
+            </div>
+            <p className="text-xs text-gray-400 font-medium">
+              {/* Rata-rata Harian: <span className="text-gray-700 font-semibold">{formatIDR(summary?.transactionMetrics.avgRevPerDay)}</span> */}
+            </p>
+          </div>
+
+          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
+            <div>
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+                Cups/Target Cups
+              </span>
+              <h3 className="text-2xl font-black text-gray-800 tracking-tight">
+                {summary?.cups.total}/
+                {Math.ceil(summary?.breakEvenRevenue?.targetCupsCount)}
+              </h3>
+            </div>
+
+            <div>
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+                Snacks/Target Snacks
+              </span>
+              <h3 className="text-2xl font-black text-gray-800 tracking-tight">
+                {summary?.snacks}/
+                {Math.ceil(summary?.breakEvenRevenue?.targetSnackCount)}
+              </h3>
+            </div>
+          </div>
+
+          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden sm:col-span-2 lg:col-span-1">
+            <div>
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+                Daily Opex
+              </span>
+              <h3 className={`text-2xl font-black tracking-tight text-red-500`}>
+                {formatIDR(summary?.opex?.dailyAmount)}
+              </h3>
+            </div>
+            <p className="text-xs text-gray-400 font-medium">
+              {/* Sisa target ke profit: <span className="text-red-500 font-bold">{formatIDR(Math.floor(summary?.breakEvenRevenue?.excessRevenueAmount))} lagi</span> */}
+            </p>
+          </div>
+
+          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
+            <div>
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+                Cash
+              </span>
+              <h3 className="text-2xl font-black text-[#0F766E] tracking-tight">
+                {formatIDR(summary?.paymentMethods?.amounts?.cash)}
+              </h3>
+            </div>
+
+            <div>
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+                QRIS
+              </span>
+              <h3 className="text-2xl font-black text-[#0F766E] tracking-tight">
+                {formatIDR(summary?.paymentMethods?.amounts?.qris)}
+              </h3>
+            </div>
+          </div>
+
+          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
+            <div>
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+                Total Loss Bahan Baku
+              </span>
+              <h3 className="text-2xl font-black text-red-500 tracking-tight">
+                {formatIDR(summary?.lossMutation?.totalNominal)}
+              </h3>
+            </div>
+
+            <div>
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+                Jumlah
+              </span>
+              <h3 className="text-2xl font-black text-red-500 tracking-tight">
+                {summary?.lossMutation?.count}
+              </h3>
+            </div>
+          </div>
         </div>
-
-        {/* CARD 2: GROSS INCOME */}
-        <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
-          <div>
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-              Keuntungan Kotor (Gross)
-            </span>
-            <h3 className="text-2xl font-black text-gray-800 tracking-tight">
-              {formatIDR(summary?.grossIncomes)}
-            </h3>
-          </div>
-          <p className="text-xs text-[#0F766E] font-bold bg-[#0F766E]/5 px-2.5 py-1 rounded-lg w-fit">
-            Gross Margin: {Math.floor(summary?.marginPercentages?.grossMargin)}%
-          </p>
-        </div>
-
-        {/* CARD 3: NET INCOME */}
-        <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden sm:col-span-2 lg:col-span-1">
-          <div>
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-              Pendapatan Bersih (Net)
-            </span>
-            <h3
-              className={`text-2xl font-black tracking-tight ${summary?.netIncomes < 0 ? "text-red-500" : "text-green-600"}`}
-            >
-              {formatIDR(summary?.netIncomes)}
-            </h3>
-          </div>
-          <span className="text-xs text-gray-400 font-medium">
-            {summary?.breakEvenRevenue?.excessRevenueAmount < 0 ? (
-              <>
-                Sisa target ke profit:{" "}
-                <span className="text-red-500 font-bold">
-                  {formatIDR(
-                    Math.floor(summary?.breakEvenRevenue?.excessRevenueAmount),
-                  )}{" "}
-                  lagi
-                </span>
-              </>
-            ) : (
-              <p className="text-xs text-green-600 font-bold bg-[#0F766E]/5 px-2.5 py-1 rounded-lg w-fit">
-                Profitable:{" "}
-                {Math.floor(summary?.breakEvenRevenue?.excessRevenuePercentage)}
-                %
-              </p>
-            )}
-          </span>
-        </div>
-
-        <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
-          <div>
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-              Orders
-            </span>
-            <h3 className="text-2xl font-black text-[#0F766E] tracking-tight">
-              {summary?.transactions}
-            </h3>
-          </div>
-          <p className="text-xs text-gray-400 font-medium">
-            {/* Rata-rata Harian: <span className="text-gray-700 font-semibold">{formatIDR(summary?.transactionMetrics.avgRevPerDay)}</span> */}
-          </p>
-        </div>
-
-        <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
-          <div>
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-              Cups/Target Cups
-            </span>
-            <h3 className="text-2xl font-black text-gray-800 tracking-tight">
-              {summary?.cups.total}/
-              {Math.ceil(summary?.breakEvenRevenue?.targetCupsCount)}
-            </h3>
-          </div>
-
-          <div>
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-              Snacks/Target Snacks
-            </span>
-            <h3 className="text-2xl font-black text-gray-800 tracking-tight">
-              {summary?.snacks}/
-              {Math.ceil(summary?.breakEvenRevenue?.targetSnackCount)}
-            </h3>
-          </div>
-        </div>
-
-        <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden sm:col-span-2 lg:col-span-1">
-          <div>
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-              Daily Opex
-            </span>
-            <h3 className={`text-2xl font-black tracking-tight text-red-500`}>
-              {formatIDR(summary?.opex?.dailyAmount)}
-            </h3>
-          </div>
-          <p className="text-xs text-gray-400 font-medium">
-            {/* Sisa target ke profit: <span className="text-red-500 font-bold">{formatIDR(Math.floor(summary?.breakEvenRevenue?.excessRevenueAmount))} lagi</span> */}
-          </p>
-        </div>
-
-        <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
-          <div>
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-              Cash
-            </span>
-            <h3 className="text-2xl font-black text-[#0F766E] tracking-tight">
-              {formatIDR(summary?.paymentMethods?.amounts?.cash)}
-            </h3>
-          </div>
-
-          <div>
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-              QRIS
-            </span>
-            <h3 className="text-2xl font-black text-[#0F766E] tracking-tight">
-              {formatIDR(summary?.paymentMethods?.amounts?.qris)}
-            </h3>
-          </div>
-        </div>
-      </div>}
+      )}
 
       {/* EMPLOYEE */}
-      {user?.role === "EMPLOYEE" && <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* CARD 1: REVENUE */}
-        <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
-          <div>
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-              Total Pendapatan
-            </span>
-            <h3 className="text-2xl font-black text-[#0F766E] tracking-tight">
-              {formatIDR(summary?.revenues)}
-            </h3>
+      {user?.role === "EMPLOYEE" && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* CARD 1: REVENUE */}
+          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
+            <div>
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+                Total Pendapatan
+              </span>
+              <h3 className="text-2xl font-black text-[#0F766E] tracking-tight">
+                {formatIDR(summary?.revenues)}
+              </h3>
+            </div>
+            <p className="text-xs text-gray-400 font-medium">
+              Rata-rata Harian:{" "}
+              <span className="text-gray-700 font-semibold">
+                {formatIDR(summary?.transactionMetrics.avgRevPerDay)}
+              </span>
+            </p>
+            <p className="text-xs text-gray-400 font-medium">
+              Target:{" "}
+              <span className="text-gray-700 font-semibold">
+                {formatIDR(summary?.breakEvenRevenue.targetAmount)}
+              </span>
+            </p>
+            {/* Target Amount: {formatIDR(summary?.breakEvenRevenue.targetAmount)} */}
           </div>
-          <p className="text-xs text-gray-400 font-medium">
-            Rata-rata Harian:{" "}
-            <span className="text-gray-700 font-semibold">
-              {formatIDR(summary?.transactionMetrics.avgRevPerDay)}
-            </span>
-          </p>
-          <p className="text-xs text-gray-400 font-medium">
-            Target:{" "}
-            <span className="text-gray-700 font-semibold">
-              {formatIDR(summary?.breakEvenRevenue.targetAmount)}
-            </span>
-          </p>
-          {/* Target Amount: {formatIDR(summary?.breakEvenRevenue.targetAmount)} */}
-        </div>
 
-        {/* CARD 2: GROSS INCOME */}
-        {/* <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
+          {/* CARD 2: GROSS INCOME */}
+          {/* <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
           <div>
             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
               Keuntungan Kotor (Gross)
@@ -436,8 +481,8 @@ export default function DashboardPage() {
           </p>
         </div> */}
 
-        {/* CARD 3: NET INCOME */}
-        {/* <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden sm:col-span-2 lg:col-span-1">
+          {/* CARD 3: NET INCOME */}
+          {/* <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden sm:col-span-2 lg:col-span-1">
           <div>
             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
               Pendapatan Bersih (Net)
@@ -469,63 +514,63 @@ export default function DashboardPage() {
           </span>
         </div> */}
 
-        <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
-          <div>
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-              Orders
-            </span>
-            <h3 className="text-2xl font-black text-[#0F766E] tracking-tight">
-              {summary?.transactions}
-            </h3>
-          </div>
-          <p className="text-xs text-gray-400 font-medium">
-            {/* Rata-rata Harian: <span className="text-gray-700 font-semibold">{formatIDR(summary?.transactionMetrics.avgRevPerDay)}</span> */}
-          </p>
-        </div>
-
-        <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
-          <div>
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-              Cups/Target Cups
-            </span>
-            <h3 className="text-2xl font-black text-gray-800 tracking-tight">
-              {summary?.cups.total}/
-              {Math.ceil(summary?.breakEvenRevenue?.targetCupsCount)}
-            </h3>
+          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
+            <div>
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+                Orders
+              </span>
+              <h3 className="text-2xl font-black text-[#0F766E] tracking-tight">
+                {summary?.transactions}
+              </h3>
+            </div>
+            <p className="text-xs text-gray-400 font-medium">
+              {/* Rata-rata Harian: <span className="text-gray-700 font-semibold">{formatIDR(summary?.transactionMetrics.avgRevPerDay)}</span> */}
+            </p>
           </div>
 
-          <div>
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-              Snacks/Target Snacks
-            </span>
-            <h3 className="text-2xl font-black text-gray-800 tracking-tight">
-              {summary?.snacks}/
-              {Math.ceil(summary?.breakEvenRevenue?.targetSnackCount)}
-            </h3>
-          </div>
-        </div>
+          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
+            <div>
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+                Cups/Target Cups
+              </span>
+              <h3 className="text-2xl font-black text-gray-800 tracking-tight">
+                {summary?.cups.total}/
+                {Math.ceil(summary?.breakEvenRevenue?.targetCupsCount)}
+              </h3>
+            </div>
 
-        <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
-          <div>
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-              Cash
-            </span>
-            <h3 className="text-2xl font-black text-gray-800 tracking-tight">
-              {formatIDR(summary?.paymentMethods?.amounts?.cash)}
-            </h3>
+            <div>
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+                Snacks/Target Snacks
+              </span>
+              <h3 className="text-2xl font-black text-gray-800 tracking-tight">
+                {summary?.snacks}/
+                {Math.ceil(summary?.breakEvenRevenue?.targetSnackCount)}
+              </h3>
+            </div>
           </div>
 
-          <div>
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-              QRIS
-            </span>
-            <h3 className="text-2xl font-black text-gray-800 tracking-tight">
-              {formatIDR(summary?.paymentMethods?.amounts?.qris)}
-            </h3>
-          </div>
-        </div>
+          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
+            <div>
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+                Cash
+              </span>
+              <h3 className="text-2xl font-black text-gray-800 tracking-tight">
+                {formatIDR(summary?.paymentMethods?.amounts?.cash)}
+              </h3>
+            </div>
 
-        {/* <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden sm:col-span-2 lg:col-span-1">
+            <div>
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+                QRIS
+              </span>
+              <h3 className="text-2xl font-black text-gray-800 tracking-tight">
+                {formatIDR(summary?.paymentMethods?.amounts?.qris)}
+              </h3>
+            </div>
+          </div>
+
+          {/* <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden sm:col-span-2 lg:col-span-1">
           <div>
             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
               Daily Opex
@@ -537,7 +582,8 @@ export default function DashboardPage() {
           <p className="text-xs text-gray-400 font-medium">
           </p>
         </div> */}
-      </div>}
+        </div>
+      )}
 
       {/* Stat Box Trigger untuk Dashboard Grid */}
       <div
