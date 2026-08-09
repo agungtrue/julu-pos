@@ -24,7 +24,7 @@ import {
   Flame,
   Package,
 } from "lucide-react";
-import { formatJuluDate } from "../../../lib/utils";
+import { formatJuluDate, formatStockValue } from "../../../lib/utils";
 
 // Enums Status Mutasi
 type MutationType = "ALL" | "RESTOCK_IN" | "USAGE_OUT" | "LOSS" | "ADJUSTMENT";
@@ -41,7 +41,7 @@ interface Ingredient {
 }
 
 interface User {
-  name: string
+  name: string;
 }
 
 interface MutationLog {
@@ -56,8 +56,9 @@ interface MutationLog {
   currentStock: number;
   cost_per_unit?: number;
   notes?: string;
+  totalCost: number;
   operatorName: string;
-  user: User
+  user: User;
 }
 
 export default function StockMutationPage() {
@@ -154,7 +155,7 @@ export default function StockMutationPage() {
   }
 
   return (
-    <div className="p-3.5 sm:p-6 bg-slate-50 min-h-screen font-sans text-slate-800 pb-24 md:pb-6">
+    <div className="p-2.5 sm:p-2 bg-slate-50 min-h-screen font-sans text-slate-800 pb-24 md:pb-6">
       {/* 1. HEADER & ACTION BUTTONS */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3.5 mb-5">
         <div>
@@ -162,7 +163,8 @@ export default function StockMutationPage() {
             Mutasi & Restock Stok
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 font-medium">
-            Lacak riwayat barang masuk, terpakai, loss, dan opname. (info: data masih dibatasi 100 data terbaru)
+            Lacak riwayat barang masuk, terpakai, loss, dan opname. (info: data
+            masih dibatasi 100 data terbaru)
           </p>
         </div>
 
@@ -214,7 +216,10 @@ export default function StockMutationPage() {
               Total Operational Loss
             </p>
             <h3 className="text-lg sm:text-xl font-black text-rose-600 mt-0.5">
-              Rp {Math.abs(mutationSummary?.loss?.totalAmount || 0).toLocaleString()}
+              Rp{" "}
+              {Math.abs(
+                mutationSummary?.loss?.totalAmount || 0,
+              ).toLocaleString()}
             </h3>
             <p className="text-[10px] sm:text-[11px] text-slate-500">
               {mutationSummary?.loss?.count || 0} kali Basi, tumpah dll
@@ -289,66 +294,103 @@ export default function StockMutationPage() {
 
       {/* 4. MUTATION LEDGER (MOBILE CARD VIEW) -> Tampil di Layar HP (< md) */}
       <div className="block md:hidden space-y-3">
-        {logs.map((log: MutationLog) => (
-          <div
-            key={log.id}
-            className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-2.5"
-          >
-            {/* Row 1: Header & Badge */}
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <h4 className="font-extrabold text-slate-900 text-sm">
-                  {log.ingredient?.name}
-                </h4>
-                <span className="text-[10px] text-slate-400 font-mono">
-                  {formatJuluDate(log.createdAt)}
+        {logs.map((log: MutationLog) => {
+          const isLossOrOut =
+            log.type === "LOSS" || log.type === "USAGE_OUT" || log.quantity < 0;
+          const absCost = Math.abs(log.totalCost || 0);
+          const formattedCost = absCost.toLocaleString("id-ID");
+
+          return (
+            <div
+              key={log.id}
+              className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs space-y-3"
+            >
+              {/* Row 1: Header & Badge */}
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <h4 className="font-extrabold text-slate-900 text-sm leading-snug">
+                    {log.ingredient?.name}
+                  </h4>
+                  <span className="text-[10px] text-slate-400 font-medium">
+                    {formatJuluDate(log.createdAt)}
+                  </span>
+                </div>
+                <div className="flex-shrink-0">{renderBadge(log.type)}</div>
+              </div>
+
+              {/* Row 2: Perubahan Stok & Snapshot Balance (UI NEW GRID 3-KOLOM) */}
+              <div className="grid grid-cols-3 gap-2 items-center p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-xs">
+                {/* 1. PERUBAHAN */}
+                <div>
+                  <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">
+                    Perubahan
+                  </p>
+                  <p className="font-extrabold font-mono text-sm mt-0.5 whitespace-nowrap">
+                    {log.quantity > 0 ? (
+                      <span className="text-emerald-600">
+                        +{formatStockValue(log.quantity)}{" "}
+                        <span className="text-[10px] font-bold text-emerald-700/70">
+                          {log.ingredient?.unit}
+                        </span>
+                      </span>
+                    ) : (
+                      <span className="text-rose-600">
+                        {formatStockValue(log.quantity)}{" "}
+                        <span className="text-[10px] font-bold text-rose-700/70">
+                          {log.ingredient?.unit}
+                        </span>
+                      </span>
+                    )}
+                  </p>
+                </div>
+
+                {/* 2. STOK AKHIR (Transisi Stok) */}
+                <div className="text-center">
+                  <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">
+                    Stok Akhir
+                  </p>
+                  <div className="font-mono text-xs mt-0.5 whitespace-nowrap flex items-center justify-center gap-1">
+                    <span className="text-slate-400 line-through text-[11px] font-normal">
+                      {formatStockValue(log.previousStock)}
+                    </span>
+                    <span className="text-slate-300 font-light">→</span>
+                    <span className="font-black text-slate-800">
+                      {formatStockValue(log.currentStock)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* 3. BIAYA / VALUASI */}
+                <div className="text-right">
+                  <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">
+                    Biaya
+                  </p>
+                  <p className="font-extrabold font-mono text-sm mt-0.5 whitespace-nowrap">
+                    {absCost === 0 ? (
+                      <span className="text-slate-400 font-medium">Rp 0</span>
+                    ) : isLossOrOut ? (
+                      <span className="text-rose-600">-Rp {formattedCost}</span>
+                    ) : (
+                      <span className="text-emerald-600">
+                        +Rp {formattedCost}
+                      </span>
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              {/* Row 3: Catatan & Operator */}
+              <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-100">
+                <span className="truncate max-w-[180px] italic text-slate-400">
+                  {log.notes || "Tanpa catatan"}
+                </span>
+                <span className="font-semibold text-slate-700 flex-shrink-0">
+                  {log?.user?.name || "-"}
                 </span>
               </div>
-              <div>{renderBadge(log.type)}</div>
             </div>
-
-            {/* Row 2: Perubahan Stok & Snapshot Balance */}
-            <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl text-xs">
-              <div>
-                <p className="text-[10px] text-slate-400 uppercase font-bold">
-                  Perubahan
-                </p>
-                <p className="font-extrabold font-mono text-sm mt-0.5">
-                  {log.quantity > 0 ? (
-                    <span className="text-emerald-600">
-                      +{log.quantity.toLocaleString()} {log.unit}
-                    </span>
-                  ) : (
-                    <span className="text-rose-600">
-                      {log.quantity.toLocaleString()} {log.unit}
-                    </span>
-                  )}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="text-[10px] text-slate-400 uppercase font-bold">
-                  Stok Akhir
-                </p>
-                <p className="font-bold text-slate-800 font-mono text-xs mt-0.5">
-                  <span className="text-slate-400 line-through mr-1 font-normal text-[11px]">
-                    {log.previousStock}
-                  </span>
-                  {log.currentStock.toLocaleString()} {log.unit}
-                </p>
-              </div>
-            </div>
-
-            {/* Row 3: Catatan & Operator */}
-            <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-100">
-              <span className="truncate max-w-[180px]">
-                {log.notes || "Tanpa catatan"}
-              </span>
-              <span className="font-medium text-slate-700">
-                {log?.user?.name}
-              </span>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* 5. MUTATION LEDGER (DESKTOP TABLE VIEW) -> Tampil di Layar Laptop/PC (>= md) */}
@@ -363,6 +405,7 @@ export default function StockMutationPage() {
                 <th className="p-4 text-right">Jumlah / Perubahan</th>
                 <th className="p-4 text-right">Stok Sebelum</th>
                 <th className="p-4 text-right">Stok Sesudah</th>
+                <th className="p-4 text-right">Jumlah (RP)</th>
                 <th className="p-4">Catatan / Ref</th>
                 <th className="p-4">Operator</th>
               </tr>
@@ -381,20 +424,31 @@ export default function StockMutationPage() {
                   <td className="p-4 text-right font-extrabold font-mono text-sm">
                     {log.quantity > 0 ? (
                       <span className="text-emerald-600">
-                        +{log.quantity.toLocaleString()} {log.unit}
+                        +{formatStockValue(log.quantity)} {log.ingredient?.unit}
                       </span>
                     ) : (
                       <span className="text-rose-600">
-                        {log.quantity.toLocaleString()} {log.unit}
+                        {formatStockValue(log.quantity)} {log.ingredient?.unit}
                       </span>
                     )}
                   </td>
 
                   <td className="p-4 text-right text-slate-400 font-mono">
-                    {log.previousStock.toLocaleString()} {log.unit}
+                    {formatStockValue(log.previousStock)} {log.ingredient?.unit}
                   </td>
                   <td className="p-4 text-right font-bold text-slate-800 font-mono">
-                    {log.currentStock.toLocaleString()} {log.unit}
+                    {formatStockValue(log.currentStock)} {log.ingredient?.unit}
+                  </td>
+                  <td className="p-4 text-right font-extrabold font-mono text-sm">
+                    {log.totalCost > 0 && log.type === "LOSS" ? (
+                      <span className="text-rose-600">
+                        Rp {log.totalCost.toLocaleString()}
+                      </span>
+                    ) : (
+                      <span className="text-emerald-600">
+                        Rp {log.totalCost.toLocaleString()}
+                      </span>
+                    )}
                   </td>
                   <td className="p-4 text-slate-500 max-w-xs truncate">
                     {log.notes || "-"}
@@ -953,11 +1007,12 @@ const ModalRecordLoss: React.FC<ModalLossProps> = ({ onClose }) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ingreMutation"] });
       queryClient.invalidateQueries({ queryKey: ["mutationSummaryData"] });
+      queryClient.invalidateQueries({ queryKey: ["orderSummaryData"] });
       onClose();
     },
     onError: (err) => {
-      console.log({ err })
-    }
+      console.log({ err });
+    },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -997,7 +1052,10 @@ const ModalRecordLoss: React.FC<ModalLossProps> = ({ onClose }) => {
         {lossMutation.isError && (
           <div className="mx-4 sm:mx-5 mt-4 p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-2 text-rose-700 text-xs shrink-0">
             <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>{(lossMutation.error as any)?.response?.data?.message || lossMutation.error?.message}</span>
+            <span>
+              {(lossMutation.error as any)?.response?.data?.message ||
+                lossMutation.error?.message}
+            </span>
           </div>
         )}
 

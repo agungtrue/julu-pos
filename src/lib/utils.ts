@@ -37,6 +37,16 @@ export function formatDate(dateInput: Date | string | number | undefined | null)
   return formatted.replace(' at ', ', ');
 }
 
+export function formatStockValue(value: number | string): string {
+  const num = typeof value === 'string' ? parseFloat(value) : value;
+  if (isNaN(num)) return '0';
+
+  return new Intl.NumberFormat('id-ID', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(num);
+}
+
 export const getPeriodLabel = (
   filter: "today" | "yesterday" | "month" | "last_month" | "custom"
 ): string => {
