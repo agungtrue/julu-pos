@@ -15,7 +15,6 @@ export default function JuluLoginPage() {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  // 💡 CONFIG WA ADMINISTRATOR
   const adminWaNumber = "6287769675686";
   const waMessage = encodeURIComponent(
     "Halo Admin Julu POS, saya lupa kata sandi untuk akun Julu POS saya. Mohon bantuannya untuk reset password.",
@@ -41,8 +40,9 @@ export default function JuluLoginPage() {
 
         await setAuthCookie(token);
 
-        router.push("/dashboard");
-        router.refresh();
+        // router.refresh();
+        // router.push("/dashboard");
+        window.location.href = "/dashboard";
       }
     } catch (error) {
       console.error(error);

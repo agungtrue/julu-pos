@@ -10,7 +10,6 @@ import {
   PlusCircle,
   AlertTriangle,
   RefreshCw,
-  Search,
   ArrowDownLeft,
   ArrowUpRight,
   FileText,
@@ -20,7 +19,6 @@ import {
   TrendingDown,
   PackageCheck,
   ArrowRight,
-  TrendingUp,
   Flame,
   Package,
 } from "lucide-react";
@@ -164,7 +162,7 @@ export default function StockMutationPage() {
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 font-medium">
             Lacak riwayat barang masuk, terpakai, loss, dan opname. (info: data
-            masih dibatasi 100 data terbaru)
+            masih dibatasi 50 data terbaru)
           </p>
         </div>
 

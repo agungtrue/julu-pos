@@ -240,21 +240,21 @@ export default function HppSystemPage() {
   };
 
   // Fungsi LIVE RECALCULATION: Berjalan setiap kali isi input takaran diubah di modal
-  const handleQtyChange = (ingredientId: string, newQty: number) => {
+  const handleQtyChange = (ingredientId: string, newQty: string | number) => {
     if (!editingRecipe) return;
 
     const targetIngredient = ingredients.find(
       (i: Ingredient) => i.id === ingredientId,
     );
     const costPerUnit = targetIngredient ? targetIngredient.cost_per_unit : 0;
+    const numericQty = Math.max(0, parseFloat(String(newQty)) || 0);
 
     const updatedBreakdown = editingRecipe?.ingredientsBreakdown.map((item) => {
       if (item.ingredient?.id === ingredientId) {
-        const qty = Math.max(0, newQty);
         return {
           ...item,
-          qty_used: qty,
-          sub_total_cost: qty * costPerUnit,
+          qty_used: newQty as unknown as number,
+          sub_total_cost: numericQty * costPerUnit,
         };
       }
       return item;
@@ -381,7 +381,6 @@ export default function HppSystemPage() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300 relative">
-      {/* 📊 HEADER SYSTEM */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-200/60 pb-5">
         <div>
           <h1 className="text-2xl font-bold text-gray-800 tracking-tight">
@@ -396,7 +395,6 @@ export default function HppSystemPage() {
         </div>
       </div>
 
-      {/* 🧭 NAVIGATION TAB CONTROLLER */}
       <div className="flex bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm w-full max-w-md font-medium">
         <button
           onClick={() => setActiveTab("ingredients")}
@@ -777,7 +775,6 @@ export default function HppSystemPage() {
               </button>
             </div>
 
-            {/* ➕ 🔴 SEKSI TOMBOL & DROPDOWN TAMBAH BAHAN BAKU BARU */}
             <div className="mt-1 pt-2">
               <div className="flex flex-col gap-2 bg-gray-50/40 border border-dashed border-gray-200 p-4 rounded-2xl">
                 <label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">
@@ -848,17 +845,16 @@ export default function HppSystemPage() {
                   {/* INPUT NUMERIK TAKARAN */}
                   <div className="flex items-center gap-2 self-end sm:self-auto">
                     <input
-                      type="number"
-                      step="any"
-                      required
+                      type="text"
+                      inputMode="decimal"
                       disabled={isSaving}
-                      value={item.qty_used === 0 ? "" : item.qty_used}
-                      onChange={(e) =>
-                        handleQtyChange(
-                          item.ingredient.id,
-                          Number(e.target.value),
-                        )
-                      }
+                      value={item.qty_used ?? ""}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(",", ".");
+                        if (val === "" || /^\d*\.?\d*$/.test(val)) {
+                          handleQtyChange(item.ingredient.id, val);
+                        }
+                      }}
                       className="w-24 text-center bg-white border border-gray-200 rounded-xl py-2 px-3 font-mono font-bold text-sm focus:outline-none focus:border-[#0F766E] focus:ring-1 focus:ring-[#0F766E] text-gray-800 disabled:bg-gray-100"
                     />
                     <span className="text-xs font-bold text-gray-400 uppercase w-10 font-mono">
@@ -1155,7 +1151,7 @@ export default function HppSystemPage() {
               <button
                 type="button"
                 onClick={() => {
-                  router.push('/dashboard/stock-mutation?isRestockModal=true')
+                  router.push("/dashboard/stock-mutation?isRestockModal=true");
                 }}
                 className="shrink-0 w-full sm:w-auto flex items-center justify-center gap-1.5 bg-[#0F766E] hover:bg-[#0d625c] active:scale-95 text-white px-3.5 py-2 rounded-xl font-bold text-xs transition shadow-sm"
               >
