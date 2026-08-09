@@ -7,20 +7,35 @@ import api from "../../../lib/api";
 import DashboardSkeleton from "@/components/DashboardSkeleton";
 import ScrollToTop from "@/components/ScrollToTop";
 import {
-  Globe,
   Coffee,
   CupSoda,
   Cookie,
   Plus,
   Edit,
   Search,
+  LayoutGrid, // Semua (Semua produk/katalog)
+  Sparkles, // Topping/Extra
+  ShoppingBag, // Retail
+  ShoppingCart, // Grocery/Sembako
+  Apple, // Produk Segar (Buah & Sayur)
+  Wrench, // Jasa & Layanan
+  Box,
 } from "lucide-react";
 import { Toaster, toast } from "sonner";
 interface Product {
   id: string;
   name: string;
   price: number;
-  type: "coffee" | "non_coffee" | "snacks";
+  type:
+    | "coffee"
+    | "non_coffee"
+    | "snacks"
+    | "topping"
+    | "service"
+    | "retail"
+    | "grocery"
+    | "fresh_produce"
+    | "other";
   size: string;
   cogs: number;
   isActive: boolean;
@@ -38,7 +53,16 @@ export default function ProductsPage() {
 
   const [isSaving, setIsSaving] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<
-    "all" | "coffee" | "non_coffee" | "snacks"
+    | "all"
+    | "coffee"
+    | "non_coffee"
+    | "snacks"
+    | "topping"
+    | "service"
+    | "retail"
+    | "grocery"
+    | "fresh_produce"
+    | "other"
   >("all");
   const [newProduct, setNewProduct] = useState<{
     name: string;
@@ -148,7 +172,8 @@ export default function ProductsPage() {
     onError: (err) => {
       setIsSaving(false);
       toast.error("Error!", {
-        description: (err as any).response?.data?.message || 'something went wrong',
+        description:
+          (err as any).response?.data?.message || "something went wrong",
         className: "bg-emerald-50 border-red-200 text-red-800 rounded-xl",
       });
     },
@@ -196,11 +221,19 @@ export default function ProductsPage() {
   };
 
   const CATEGORY_MAP = {
-    all: { label: "Semua", icon: Globe },
+    all: { label: "Semua", icon: LayoutGrid },
     coffee: { label: "Kopi", icon: Coffee },
-    non_coffee: { label: "Non-Kopi", icon: CupSoda }, // Pengganti es krim/sirup
-    snacks: { label: "Cemilan", icon: Cookie }, // Pengganti kentang goreng
+    non_coffee: { label: "Non-Kopi", icon: CupSoda },
+    snacks: { label: "Cemilan", icon: Cookie },
+    topping: { label: "Topping", icon: Sparkles },
+    retail: { label: "Retail", icon: ShoppingBag },
+    grocery: { label: "Grocery / Sembako", icon: ShoppingCart },
+    fresh_produce: { label: "Produk Segar", icon: Apple },
+    service: { label: "Jasa & Layanan", icon: Wrench },
+    other: { label: "Lainnya", icon: Box },
   } as const;
+
+  const CATEGORY_ARRAY = Object.keys(CATEGORY_MAP);
 
   if (isLoadingProductData) return <DashboardSkeleton />;
 
@@ -226,39 +259,38 @@ export default function ProductsPage() {
       </div>
 
       <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
-        <div className="relative flex-1">
-          <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400">
-            <Search className="w-4 h-4" />
-          </span>
+        <div className="relative w-full">
+          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
-            placeholder="Cari nama menu kamu..."
+            placeholder="Cari nama produk..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#0F766E] focus:bg-white transition-colors"
+            className="w-full pl-9 pr-4 py-2.5 text-xs font-semibold rounded-xl border border-gray-200 bg-gray-50/70 focus:bg-white focus:border-teal-600 focus:ring-1 focus:ring-teal-600 focus:outline-none transition-all"
           />
         </div>
 
-        <div className="flex gap-1 overflow-x-auto pb-1 lg:pb-0 scrollbar-none font-medium">
-          {(["all", "coffee", "non_coffee", "snacks"] as const).map((cat) => {
+        {/* 🏷️ Baris 2: Scrollable Categories */}
+        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-0.5">
+          {([...CATEGORY_ARRAY] as const).map((cat) => {
             const item = CATEGORY_MAP[cat as keyof typeof CATEGORY_MAP];
             const Icon = item.icon;
 
             return (
               <button
                 key={cat}
-                onClick={() => setSelectedCategory(cat)}
+                onClick={() => setSelectedCategory(cat as keyof typeof CATEGORY_MAP)}
                 className={`
-                  flex items-center gap-2 px-3 py-2 text-xs font-bold uppercase rounded-xl border whitespace-nowrap transition-all
-                  ${
-                    selectedCategory === cat
-                      ? "bg-[#EF5B2B] text-white shadow-sm"
-                      : "bg-gray-50 hover:bg-gray-100 text-gray-500"
-                  }
-                `}
+            flex items-center gap-2 px-3.5 py-2 text-xs font-bold uppercase rounded-xl border whitespace-nowrap transition-all flex-shrink-0
+            ${
+              selectedCategory === cat
+                ? "bg-[#EF5B2B] text-white border-[#EF5B2B] shadow-xs"
+                : "bg-gray-50 hover:bg-gray-100 text-gray-600 border-gray-200/80"
+            }
+          `}
               >
                 <Icon className="w-4 h-4" />
-                {item.label}
+                <span>{item.label}</span>
               </button>
             );
           })}
@@ -381,8 +413,13 @@ export default function ProductsPage() {
                 <h3 className="font-black text-gray-800 text-lg tracking-tight mt-2">
                   Informasi Produk
                 </h3>
-                <p className="text-gray-400">Jika brand anda buka kopi, maka pilihlah tipe produk yang sesuai</p>
-                <span className="text-[12px] font-bold text-gray-400">Contoh Jus/Air Mineral: non coffee, Kentang Goreng: Snacks</span>
+                <p className="text-gray-400">
+                  Jika brand anda buka kopi, maka pilihlah tipe produk yang
+                  sesuai
+                </p>
+                <span className="text-[12px] font-bold text-gray-400">
+                  Contoh Jus/Air Mineral: non coffee, Kentang Goreng: Snacks
+                </span>
               </div>
               <button
                 type="button"
@@ -446,7 +483,7 @@ export default function ProductsPage() {
                   <option value="" disabled>
                     ─ Pilih Jenis Produk ─
                   </option>
-                  {["coffee", "non_coffee", "snacks"].map((master) => (
+                  {[...CATEGORY_ARRAY].map((master) => (
                     <option key={master} value={master}>
                       {master}
                     </option>
@@ -586,7 +623,7 @@ export default function ProductsPage() {
                   <option value="" disabled>
                     ── Pilih Jenis Produk ──
                   </option>
-                  {["coffee", "non_coffee", "snacks"].map((master) => (
+                  {[...CATEGORY_ARRAY].map((master) => (
                     <option key={master} value={master}>
                       {master}
                     </option>
