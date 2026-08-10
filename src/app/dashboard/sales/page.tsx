@@ -358,7 +358,7 @@ export default function SalesLogPage() {
                 : "text-gray-500 hover:text-gray-800"
             }`}
           >
-            Today
+            Hari Ini
           </button>
           <button
             onClick={() => setOrderTime("pending")}
@@ -368,7 +368,7 @@ export default function SalesLogPage() {
                 : "text-gray-500 hover:text-gray-800"
             }`}
           >
-            Pending
+            Belum Bayar
           </button>
           <button
             onClick={() => setOrderTime("")}
@@ -378,7 +378,7 @@ export default function SalesLogPage() {
                 : "text-gray-500 hover:text-gray-800"
             }`}
           >
-            All
+            Semua
           </button>
         </div>
 
@@ -547,7 +547,7 @@ export default function SalesLogPage() {
                   </div>
                 </div>
 
-                {isOwnerAdmin && tx.status === ORDER_STATUS.INIT && (
+                {tx.status === ORDER_STATUS.INIT && (
                   <button
                     type="button"
                     onClick={(e) => {
@@ -810,7 +810,6 @@ export default function SalesLogPage() {
                 </label>
               </div>
 
-              {/* 📅 DYNAMIC CUSTOM DATE INPUTS (Hanya muncul jika 'custom' dipilih) */}
               <div
                 className={`transition-all duration-300 ease-in-out overflow-hidden ${selectedRange === "custom" ? "max-h-40 opacity-100 mt-2" : "max-h-0 opacity-0"}`}
               >
@@ -842,7 +841,6 @@ export default function SalesLogPage() {
                 </div>
               </div>
 
-              {/* 🛠️ MODAL ACTIONS */}
               <div className="flex items-center justify-end gap-2.5 mt-4 pt-4 border-t border-gray-100">
                 <button
                   type="button"

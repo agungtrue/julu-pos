@@ -161,7 +161,7 @@ export default function DashboardPage() {
         <div className="bg-white border border-gray-200 px-4 py-2.5 rounded-2xl flex items-center gap-3 w-fit shadow-sm">
           <span className="flex h-2.5 w-2.5 rounded-full bg-amber-500"></span>
           <span className="text-xs font-semibold text-gray-600">
-            Progress Menuju BEP:{" "}
+            Progress Balik Modal:{" "}
             <span className="text-[#EF5B2B] font-bold">
               {Math.floor(summary?.breakEvenRevenue?.actualVsTargetPercentage)}%
             </span>
@@ -620,7 +620,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-1 bg-white border border-gray-100 p-6 rounded-3xl shadow-sm">
           <h4 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-6 border-l-4 border-[#0F766E] pl-3">
-            Volume Distribusi
+            Jumlah Menu Terjual
           </h4>
 
           <div className="space-y-5">
@@ -651,7 +651,7 @@ export default function DashboardPage() {
 
             <div className="bg-gray-50/60 border border-gray-100 p-4 rounded-2xl flex justify-between items-center">
               <span className="text-sm font-bold text-gray-700">
-                Cemilan / Snacks
+                Cemilan
               </span>
               <span className="text-sm font-black text-[#EF5B2B] font-mono">
                 {summary?.snacks} Porsi

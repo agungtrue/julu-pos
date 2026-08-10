@@ -8,6 +8,8 @@ import api from "../../lib/api";
 import { endpoints } from "../../config/enpoints";
 import { MismatchDomainModal } from "@/components/MismatchDomainModal";
 import axios from "axios";
+import Link from "next/link";
+import { ChevronLeft } from "lucide-react";
 interface CheckoutResponse {
   invoice: {
     id: string;
@@ -25,7 +27,7 @@ interface CheckoutResponse {
 export default function SubscriptionExpiredPage() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
-//   console.log({ user });
+  //   console.log({ user });
   const [selectedPackage, setSelectedPackage] = useState("3_MONTHS");
   const [mismatchData, setMismatchData] = useState({
     currentDomain: "",
@@ -43,7 +45,7 @@ export default function SubscriptionExpiredPage() {
   } = useQuery({
     queryKey: ["tenantInfo"],
     queryFn: async () => {
-      const id = user?.tenant?.id || ''
+      const id = user?.tenant?.id || "";
       const url = endpoints.tenants.status(id);
 
       const response = await api.get(url);
@@ -52,7 +54,7 @@ export default function SubscriptionExpiredPage() {
     retry: false,
   });
 
-    // console.log({ tenantInfo, isError, tenantInfoError });
+  // console.log({ tenantInfo, isError, tenantInfoError });
 
   useEffect(() => {
     if (isError && axios.isAxiosError(tenantInfoError)) {
@@ -90,9 +92,9 @@ export default function SubscriptionExpiredPage() {
 
   useEffect(() => {
     if (packagesData?.length) {
-      setSelectedPackage(packagesData[1].id)
+      setSelectedPackage(packagesData[1].id);
     }
-  }, [packagesData])
+  }, [packagesData]);
 
   const activePack =
     packages.find((p: any) => p.id === selectedPackage) || packages[1];
@@ -194,6 +196,15 @@ export default function SubscriptionExpiredPage() {
       <div className="w-full max-w-4xl bg-white rounded-3xl border border-gray-200 shadow-xl overflow-hidden animate-scale-up">
         <div className="grid grid-cols-1 lg:grid-cols-5">
           <div className="lg:col-span-3 p-6 md:p-8 border-b lg:border-b-0 lg:border-r border-gray-100">
+            <div className="mb-5">
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-400 hover:text-[#0A8F8A] transition-colors group cursor-pointer"
+              >
+                <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+                <span>Kembali ke Dashboard</span>
+              </Link>
+            </div>
             <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-4">
               1. Pilih Paket Perpanjangan
             </h3>
