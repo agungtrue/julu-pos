@@ -21,6 +21,7 @@ import {
   Box,
   CupSoda,
   Cookie,
+  ReceiptText
 } from "lucide-react";
 import { ProductItem, CartItem } from "./types/order.types";
 import { Toaster, toast } from "sonner";
@@ -715,7 +716,7 @@ export default function CreateOrderPage() {
 
           <div className="flex items-center justify-between p-2.5 bg-white border border-gray-200 rounded-xl shadow-xs">
             <div className="flex items-center gap-2">
-              <Box size={16} />
+              <ReceiptText size={16} />
               <span className="text-xs font-bold text-gray-700">
                 Bayar Nanti?
               </span>
@@ -751,7 +752,7 @@ export default function CreateOrderPage() {
                 {isPreConfirmLoading ? (
                   <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
                 ) : (
-                  "Submit"
+                  "Simpan Pesanan"
                 )}
               </button>
             </div>
@@ -767,7 +768,7 @@ export default function CreateOrderPage() {
                 {isPreConfirmLoading ? (
                   <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
                 ) : (
-                  "Init"
+                  "Terima Pesanan"
                 )}
               </button>
 
@@ -782,7 +783,7 @@ export default function CreateOrderPage() {
                 {isConfirmLoading ? (
                   <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
                 ) : (
-                  "Confirm"
+                  "Konfirmasi"
                 )}
               </button>
             </div>

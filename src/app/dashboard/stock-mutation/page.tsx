@@ -158,11 +158,11 @@ export default function StockMutationPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3.5 mb-5">
         <div>
           <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
-            Mutasi & Restock Stok
+            Riwayat Keluar - Masuk Bahan
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 font-medium">
-            Lacak riwayat barang masuk, terpakai, loss, dan opname. (info: data
-            masih dibatasi 50 data terbaru)
+            Cek bahan yang terpakai otomatis dan catat pasokan baru/terbuang
+            (info: data masih dibatasi 50 data terbaru)
           </p>
         </div>
 
