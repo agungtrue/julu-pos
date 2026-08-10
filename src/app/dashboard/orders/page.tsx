@@ -13,6 +13,14 @@ import {
   Plus,
   Minus,
   Trash2,
+  Sparkles,
+  ShoppingBag,
+  ShoppingCart,
+  Apple,
+  Wrench,
+  Box,
+  CupSoda,
+  Cookie,
 } from "lucide-react";
 import { ProductItem, CartItem } from "./types/order.types";
 import { Toaster, toast } from "sonner";
@@ -24,8 +32,14 @@ import { useThermalPrint } from "@/hooks/useThermalPrint";
 const CATEGORY_MAP = {
   all: { label: "Semua", icon: LayoutGrid },
   coffee: { label: "Kopi", icon: Coffee },
-  non_coffee: { label: "Non-Kopi", icon: Leaf },
-  snacks: { label: "Camilan", icon: Pizza },
+  non_coffee: { label: "Non-Kopi", icon: CupSoda },
+  snacks: { label: "Cemilan", icon: Cookie },
+  topping: { label: "Topping", icon: Sparkles },
+  retail: { label: "Retail", icon: ShoppingBag },
+  grocery: { label: "Grocery / Sembako", icon: ShoppingCart },
+  fresh_produce: { label: "Produk Segar", icon: Apple },
+  service: { label: "Jasa & Layanan", icon: Wrench },
+  other: { label: "Lainnya", icon: Box },
 };
 
 export default function CreateOrderPage() {
@@ -37,6 +51,7 @@ export default function CreateOrderPage() {
   const [orderUuid, setOrderUuid] = useState(null);
   const [customerName, setCustomerName] = useState("Walk-in Customer");
   const [isPrintReceipt, setIsPrintReceipt] = useState(true);
+  const [isPayLater, setIsPayLater] = useState(false);
   const [isPreConfirmLoading, setIsPreConfirmLoading] = useState(false);
   const [isConfirmLoading, setIsConfirmLoading] = useState(false);
   // ==========================================
@@ -166,6 +181,7 @@ export default function CreateOrderPage() {
         orderType: orderType,
         paidAmount: paidAmount,
         changeAmount: changeAmount,
+        metadata: { items: payloads },
       };
       return await api.post(endpoints.orders.order.init, payload);
     },
@@ -175,6 +191,14 @@ export default function CreateOrderPage() {
       queryClient.invalidateQueries({ queryKey: ["orderSummaryData"] });
       queryClient.invalidateQueries({ queryKey: ["orderListData"] });
       setIsPreConfirmLoading(false);
+
+      if (isPayLater) {
+        toast.success("Transaksi tersimpan!", {
+          description: "Pesanan telah disimpan, silahkan periksa kembali di Riwayat Transaksi.",
+          className:
+            "bg-emerald-50 border-emerald-200 text-emerald-800 rounded-xl",
+        });
+      }
     },
   });
 
@@ -199,7 +223,7 @@ export default function CreateOrderPage() {
     },
     onSuccess: (res) => {
       toast.success("Transaksi Berhasil!", {
-        description: "Pesanan telah disimpan, silahkan cek di sales page.",
+        description: "Pesanan telah disimpan, silahkan cek di Riwayat Transaksi.",
         className:
           "bg-emerald-50 border-emerald-200 text-emerald-800 rounded-xl",
       });
@@ -209,7 +233,7 @@ export default function CreateOrderPage() {
       setCart([]);
       setCashReceived("");
       playSuccessSound();
-      setIsConfirmLoading(false)
+      setIsConfirmLoading(false);
 
       if (isPrintReceipt) {
         getPrintReceipt(res.data);
@@ -238,7 +262,7 @@ export default function CreateOrderPage() {
       subtotal: payload.order.total,
       discount: 0,
       totalAdjustedPrice: payload.order.total,
-      payment_method: (payload.order.payment_method).toUpperCase(),
+      payment_method: payload.order.payment_method.toUpperCase(),
       paidAmount: payload.order.paidAmount,
       changeAmount: payload.order.changeAmount,
       total: payload.order.total,
@@ -267,7 +291,7 @@ export default function CreateOrderPage() {
       paymentMethod: order.payment_method || "CASH",
       paidAmount: order.paidAmount || order.total,
       changeAmount: order.changeAmount || 0,
-      footerNote: order.receiptFooter
+      footerNote: order.receiptFooter,
     };
 
     printReceipt(receiptData, "58mm");
@@ -275,7 +299,7 @@ export default function CreateOrderPage() {
 
   const handleConfirmOrders = () => {
     postConfirmOrders(cart);
-    setIsConfirmLoading(true)
+    setIsConfirmLoading(true);
   };
 
   const playSuccessSound = () => {
@@ -689,37 +713,80 @@ export default function CreateOrderPage() {
             </button>
           </div>
 
-          {/* 6. ACTION BUTTONS (INIT & CONFIRM) */}
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={handleInitOrders}
-              disabled={cart.length === 0 || !!orderUuid || isPreConfirmLoading}
-              className="w-full py-4 bg-[#EF5B2B] text-white font-black text-sm uppercase tracking-wider rounded-xl shadow-md hover:bg-[#d64e22] disabled:bg-gray-300 disabled:shadow-none transition-all cursor-pointer flex items-center justify-center"
-            >
-              {isPreConfirmLoading ? (
-                <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-              ) : (
-                "Init"
-              )}
-            </button>
+          <div className="flex items-center justify-between p-2.5 bg-white border border-gray-200 rounded-xl shadow-xs">
+            <div className="flex items-center gap-2">
+              <Box size={16} />
+              <span className="text-xs font-bold text-gray-700">
+                Bayar Nanti?
+              </span>
+            </div>
 
             <button
-              onClick={() =>
-                handleConfirmOrders()
-              }
-              disabled={
-                !orderUuid ||
-                (paymentMethod === "cash" && cashSummary.isShortage)
-              }
-              className="w-full py-4 bg-[#EF5B2B] text-white font-black text-sm uppercase tracking-wider rounded-xl shadow-md hover:bg-[#d64e22] disabled:bg-gray-300 disabled:shadow-none transition-all cursor-pointer flex items-center justify-center"
+              type="button"
+              role="switch"
+              aria-checked={isPayLater}
+              onClick={() => setIsPayLater(!isPayLater)}
+              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                isPayLater ? "bg-[#0F766E]" : "bg-gray-300"
+              }`}
             >
-              {isConfirmLoading ? (
-                <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-              ) : (
-                "Confirm"
-              )}
+              <span
+                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out ${
+                  isPayLater ? "translate-x-4" : "translate-x-0"
+                }`}
+              />
             </button>
           </div>
+
+          {/* 6. ACTION BUTTONS (INIT & CONFIRM) */}
+          {isPayLater ? (
+            <div className="w-full">
+              <button
+                onClick={handleInitOrders}
+                disabled={
+                  cart.length === 0 || !!orderUuid || isPreConfirmLoading
+                }
+                className="w-full py-4 bg-[#EF5B2B] text-white font-black text-sm uppercase tracking-wider rounded-xl shadow-md hover:bg-[#d64e22] disabled:bg-gray-300 disabled:shadow-none transition-all cursor-pointer flex items-center justify-center"
+              >
+                {isPreConfirmLoading ? (
+                  <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                ) : (
+                  "Submit"
+                )}
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={handleInitOrders}
+                disabled={
+                  cart.length === 0 || !!orderUuid || isPreConfirmLoading
+                }
+                className="w-full py-4 bg-[#EF5B2B] text-white font-black text-sm uppercase tracking-wider rounded-xl shadow-md hover:bg-[#d64e22] disabled:bg-gray-300 disabled:shadow-none transition-all cursor-pointer flex items-center justify-center"
+              >
+                {isPreConfirmLoading ? (
+                  <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                ) : (
+                  "Init"
+                )}
+              </button>
+
+              <button
+                onClick={() => handleConfirmOrders()}
+                disabled={
+                  !orderUuid ||
+                  (paymentMethod === "cash" && cashSummary.isShortage)
+                }
+                className="w-full py-4 bg-[#EF5B2B] text-white font-black text-sm uppercase tracking-wider rounded-xl shadow-md hover:bg-[#d64e22] disabled:bg-gray-300 disabled:shadow-none transition-all cursor-pointer flex items-center justify-center"
+              >
+                {isConfirmLoading ? (
+                  <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                ) : (
+                  "Confirm"
+                )}
+              </button>
+            </div>
+          )}
         </div>
       </div>
       <Toaster />

@@ -9,9 +9,10 @@ import DashboardSkeleton from "@/components/DashboardSkeleton";
 import { Search } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import dayjs from "dayjs";
-import { Trash2 } from "lucide-react";
+import { Trash2, CheckIcon } from "lucide-react";
 import { Toaster, toast } from "sonner";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { ProductItem, CartItem } from "../orders/types/order.types";
 
 interface TransactionDetail {
   name: string;
@@ -35,10 +36,27 @@ interface Transaction {
   items: TransactionItem[];
   discountAmount: number;
   finalAmount: number;
+  status: string;
+  metadata: {
+    items: [];
+  };
   user: User;
   total: number;
   payment_method: "qris" | "cash";
   customerName: string;
+}
+interface ConfirmOrderApiPayload {
+  uuid: string;
+  items: {
+    qty: number;
+    product_id: string;
+  }[];
+  metadata: { items: [] };
+}
+
+interface ModalState {
+  order: ConfirmOrderApiPayload;
+  isOpen: boolean;
 }
 
 export default function SalesLogPage() {
@@ -49,11 +67,19 @@ export default function SalesLogPage() {
     "ALL",
   );
   const [searchQuery, setSearchQuery] = useState("");
-  const [orderTime, setOrderTime] = useState<"today" | "">("today");
+  const [orderTime, setOrderTime] = useState<"today" | "pending" | "">("today");
 
   // State untuk Manajemen Modal Detail Order
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
+
+  const [confirmTrxModal, setConfirmTrxModal] = useState<{
+    isOpen: boolean;
+    order: object | null;
+  }>({
+    isOpen: false,
+    order: null,
+  });
 
   const [deleteModal, setDeleteModal] = useState<{
     isOpen: boolean;
@@ -63,8 +89,14 @@ export default function SalesLogPage() {
     orderId: null,
   });
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
 
-  const fetchOrderListData = async (filter: "today" | "") => {
+  const ORDER_STATUS = {
+    CONFIRMED: "confirmed",
+    INIT: "init",
+  };
+
+  const fetchOrderListData = async (filter: "today" | "pending" | "") => {
     let url = endpoints.orders.getAll;
 
     if (filter === "today") {
@@ -196,6 +228,45 @@ export default function SalesLogPage() {
     setDeleteModal({ isOpen: true, orderId: id });
   };
 
+  const playSuccessSound = () => {
+    const audio = new Audio("/sounds/kasir_sound.mp3");
+    audio.volume = 1.0; // 0.0 to 1.0)
+
+    audio.play().catch((error) => {
+      console.warn("Audio playback on hold browser policy", error);
+    });
+  };
+
+  const { mutate: postConfirmOrders } = useMutation({
+    mutationFn: async (payloads: ModalState) => {
+      setIsConfirming(true);
+      const payload = {
+        uuid: payloads.order.uuid,
+        items: payloads.order.metadata?.items?.map((data: CartItem) => {
+          return {
+            qty: data.qty,
+            product_id: data.id,
+          };
+        }),
+      };
+      return await api.post(endpoints.orders.order.confirm, payload);
+    },
+    onSuccess: () => {
+      toast.success("Transaksi Berhasil!", {
+        description: "Pesanan telah disimpan, silahkan cek di sales page.",
+        className:
+          "bg-emerald-50 border-emerald-200 text-emerald-800 rounded-xl",
+      });
+
+      queryClient.invalidateQueries({ queryKey: ["orderListData"] });
+      queryClient.invalidateQueries({ queryKey: ["orderSummaryData"] });
+      playSuccessSound();
+
+      setIsConfirming(false);
+      setConfirmTrxModal({ isOpen: false, order: null });
+    },
+  });
+
   if (isLoading) return <DashboardSkeleton />;
   // return <DashboardSkeleton/>
 
@@ -215,20 +286,44 @@ export default function SalesLogPage() {
     return items.map((i) => `${i.qty}x ${i.product.name}`).join(", ");
   };
 
+  const getItemsSummaryStringMetadata = (items: TransactionItem[]) => {
+    return items.map((i) => `${i.qty}x ${i.name}`).join(", ");
+  };
+
   const handleOpenDetail = (tx: Transaction) => {
     setSelectedTx(tx);
     setIsModalOpen(true);
   };
 
-  const transactions = transactionsData.filter((tx: Transaction) => {
-    const summaryText = getItemsSummaryString(tx.items).toLowerCase();
+  const getStatusByOrderTime = (time: any) => {
+    if (time === "today") return ORDER_STATUS.CONFIRMED;
+    return ORDER_STATUS.INIT;
+  };
+
+  let transactions = transactionsData.filter((tx: Transaction) => {
+    let summaryText = getItemsSummaryString(tx.items).toLowerCase();
+
+    if (orderTime === "pending" && tx.metadata?.items) {
+      summaryText = getItemsSummaryStringMetadata(
+        tx.metadata.items,
+      ).toLowerCase();
+    }
+    const invoiceNo = String(tx.invoiceNo || "").toLowerCase();
+
     const matchesSearch =
       String(tx.id).toLowerCase().includes(searchQuery.toLowerCase()) ||
+      invoiceNo.includes(searchQuery.toLowerCase()) ||
       summaryText.includes(searchQuery.toLowerCase());
     const matchesMethod =
       filterMethod === "ALL" || tx.payment_method === filterMethod;
     return matchesSearch && matchesMethod;
   });
+
+  if (["today", "pending"].includes(orderTime)) {
+    transactions = transactions.filter(
+      (tx: Transaction) => tx.status === getStatusByOrderTime(orderTime),
+    );
+  }
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
@@ -264,6 +359,16 @@ export default function SalesLogPage() {
             }`}
           >
             Today
+          </button>
+          <button
+            onClick={() => setOrderTime("pending")}
+            className={`px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 ${
+              orderTime === "pending"
+                ? "bg-white text-teal-700 shadow-sm"
+                : "text-gray-500 hover:text-gray-800"
+            }`}
+          >
+            Pending
           </button>
           <button
             onClick={() => setOrderTime("")}
@@ -333,78 +438,142 @@ export default function SalesLogPage() {
           Feed Transaksi (Ketuk untuk Detail)
         </h3>
 
-        {transactions?.map((tx: Transaction) => (
-          <div
-            key={tx.id}
-            onClick={() => handleOpenDetail(tx)}
-            className="bg-white border border-gray-100 rounded-3xl p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-gray-300 hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer group relative"
-          >
-            {/* 1. INFORMASI UTAMA & BADGE */}
-            <div className="space-y-1">
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <span
-                  className={`text-[9px] font-black tracking-wider uppercase px-2 py-0.5 rounded-md ${
-                    tx.payment_method === "qris"
-                      ? "bg-[#0F766E]/10 text-[#0F766E]"
-                      : "bg-[#EF5B2B]/10 text-[#EF5B2B]"
-                  }`}
-                >
-                  {tx.payment_method}
-                </span>
-                <span
-                  className={`text-[9px] font-black tracking-wider uppercase px-2 py-0.5 rounded-md bg-[#0A8F8A] text-[#ffffff]`}
-                >
-                  {tx.customerName || "Walk-in Customer"}
-                </span>
-              </div>
-              <p className="text-[11px] text-gray-400 font-medium">
-                {formatJuluDate(tx.createdAt)} • Operator:{" "}
-                <span className="text-gray-600 font-semibold">
-                  {tx.user?.name || "Kasir"}
-                </span>
-              </p>
-            </div>
+        {transactions?.map((tx: Transaction) => {
+          const getOrderStatusBadge = (status?: string) => {
+            const s = (status || "").toLowerCase();
+            switch (s) {
+              case "confirmed":
+                return "bg-emerald-50 text-emerald-700 border border-emerald-200/60";
+              case "init":
+              case "unpaid":
+                return "bg-amber-50 text-amber-700 border border-amber-200/60";
+              case "processing":
+              case "preparing":
+                return "bg-blue-50 text-blue-700 border border-blue-200/60";
+              case "cancelled":
+              case "failed":
+                return "bg-rose-50 text-rose-700 border border-rose-200/60";
+              default:
+                return "bg-gray-100 text-gray-600 border border-gray-200/60";
+            }
+          };
 
-            {/* 2. RINGKASAN PESANAN */}
-            <div className="bg-gray-50/60 border border-gray-100/40 rounded-xl p-3 flex-1 md:max-w-xl">
-              <span className="text-[9px] text-gray-400 uppercase font-bold block mb-0.5">
-                Pesanan ringkas:
-              </span>
-              <p className="text-xs text-gray-600 font-medium line-clamp-1">
-                {getItemsSummaryString(tx.items)}
-              </p>
-            </div>
+          return (
+            <div
+              key={tx.id}
+              onClick={() => handleOpenDetail(tx)}
+              className="bg-white border border-gray-100 rounded-3xl p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-gray-300 hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer group relative"
+            >
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {tx.status && (
+                    <span
+                      className={`text-[9px] font-black tracking-wider uppercase px-2 py-0.5 rounded-md ${getOrderStatusBadge(
+                        tx.status,
+                      )}`}
+                    >
+                      {tx.status.replace("_", " ")}
+                    </span>
+                  )}
 
-            {/* 3. TOTAL AKHIR & TOMBOL ACTION */}
-            <div className="flex items-center justify-between md:justify-end gap-4 border-t border-gray-50 md:border-0 pt-3 md:pt-0">
-              <div className="text-left md:text-right">
-                <span className="text-[10px] text-gray-400 uppercase font-bold block md:hidden">
-                  Total:
-                </span>
-                <div>
-                  <span className="text-base font-black text-gray-800 font-mono tracking-tight">
-                    {formatIDR(tx.total)}
+                  <span
+                    className={`text-[9px] font-black tracking-wider uppercase px-2 py-0.5 rounded-md ${
+                      tx.payment_method === "qris"
+                        ? "bg-[#0F766E]/10 text-[#0F766E]"
+                        : "bg-[#EF5B2B]/10 text-[#EF5B2B]"
+                    }`}
+                  >
+                    {tx.payment_method}
                   </span>
-                  <span className="text-[10px] text-gray-400 block font-medium text-right mt-0.5">
-                    ({getTotalItemsCount(tx.items)} item)
+
+                  <span
+                    className={`text-[9px] font-black tracking-wider uppercase px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200/60`}
+                  >
+                    {tx.invoiceNo || ""}
                   </span>
+
+                   {tx.customerName !== "Walk-in Customer" && (
+                    <span
+                      className={`text-[9px] font-black tracking-wider uppercase px-2 py-0.5 rounded-md bg-gray-100 text-gray-600 border border-gray-200/60`}
+                    >
+                      {tx.customerName || "Walk-in Customer"}
+                    </span>
+                  )}
                 </div>
+
+                <p className="text-[11px] text-gray-400 font-medium pt-0.5">
+                  {formatJuluDate(tx.createdAt)} • Operator:{" "}
+                  <span className="text-gray-600 font-semibold">
+                    {tx.user?.name || "Kasir"}
+                  </span>
+                </p>
               </div>
 
-              {/* 💡 TOMBOL DELETE: HANYA DIRENDER UNTUK ROLE owner_admin */}
-              {isOwnerAdmin && (
-                <button
-                  type="button"
-                  onClick={(e) => onDeleteClick(e, tx.id)}
-                  title="Hapus Transaksi"
-                  className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all cursor-pointer ml-2"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              )}
+              <div className="bg-gray-50/60 border border-gray-100/40 rounded-xl p-3 flex-1 md:max-w-xl">
+                {tx.status === ORDER_STATUS.CONFIRMED && (
+                  <>
+                    <span className="text-[9px] text-gray-400 uppercase font-bold block mb-0.5">
+                      Pesanan ringkas:
+                    </span>
+                    <p className="text-xs text-gray-600 font-medium line-clamp-1">
+                      {getItemsSummaryString(tx.items)}
+                    </p>
+                  </>
+                )}
+                {tx.status === ORDER_STATUS.INIT && tx.metadata?.items && (
+                  <>
+                    <span className="text-[9px] text-gray-400 uppercase font-bold block mb-0.5">
+                      Pesanan ringkas:
+                    </span>
+                    <p className="text-xs text-gray-600 font-medium line-clamp-1">
+                      {getItemsSummaryStringMetadata(tx.metadata?.items || {})}
+                    </p>
+                  </>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between md:justify-end gap-4 border-t border-gray-50 md:border-0 pt-3 md:pt-0">
+                <div className="text-left md:text-right">
+                  <span className="text-[10px] text-gray-400 uppercase font-bold block md:hidden">
+                    Total:
+                  </span>
+                  <div>
+                    <span className="text-base font-black text-gray-800 font-mono tracking-tight">
+                      {formatIDR(tx.total)}
+                    </span>
+                    <span className="text-[10px] text-gray-400 block font-medium text-right mt-0.5">
+                      ({getTotalItemsCount(tx.items)} item)
+                    </span>
+                  </div>
+                </div>
+
+                {isOwnerAdmin && tx.status === ORDER_STATUS.INIT && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setConfirmTrxModal({ isOpen: true, order: tx });
+                    }}
+                    title="KonfirmasiTransaksi"
+                    className="p-2 text-gray-300 hover:text-emerald-500 hover:bg-emerald-50 rounded-xl transition-all cursor-pointer ml-2"
+                  >
+                    <CheckIcon className="w-4 h-4" />
+                  </button>
+                )}
+                {isOwnerAdmin && (
+                  <button
+                    type="button"
+                    onClick={(e) => onDeleteClick(e, tx.id)}
+                    title="Hapus Transaksi"
+                    className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all cursor-pointer ml-2"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* 📱 SLIDE-UP MODAL ENGINE: STRUK ORDER DETAIL */}
@@ -713,6 +882,21 @@ export default function SalesLogPage() {
         confirmText="Ya, Hapus"
         variant="danger"
         isLoading={isDeleting}
+      />
+
+      <ConfirmModal
+        isOpen={confirmTrxModal.isOpen}
+        onClose={() => setConfirmTrxModal({ isOpen: false, order: null })}
+        onConfirm={() => {
+          if (confirmTrxModal?.order) {
+            postConfirmOrders(JSON.parse(JSON.stringify(confirmTrxModal)));
+          }
+        }}
+        title="Konfirmasi Transaksi?"
+        description="Periksa kembali pesanan dan harga pada transaksi ini"
+        confirmText="Ya, Konfirmasi"
+        variant="info"
+        isLoading={isConfirming}
       />
 
       <Toaster />
