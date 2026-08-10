@@ -638,6 +638,7 @@ const ModalRestockIn: React.FC<ModalRestockInProps> = ({ onClose }) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ingreMutation"] });
+      queryClient.invalidateQueries({ queryKey: ["mutationSummaryData"] });
       onClose();
     },
   });

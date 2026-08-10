@@ -13,12 +13,12 @@ import {
   Plus,
   Edit,
   Search,
-  LayoutGrid, // Semua (Semua produk/katalog)
-  Sparkles, // Topping/Extra
-  ShoppingBag, // Retail
-  ShoppingCart, // Grocery/Sembako
-  Apple, // Produk Segar (Buah & Sayur)
-  Wrench, // Jasa & Layanan
+  LayoutGrid,
+  Sparkles,
+  ShoppingBag,
+  ShoppingCart,
+  Apple,
+  Wrench,
   Box,
 } from "lucide-react";
 import { Toaster, toast } from "sonner";
