@@ -305,7 +305,7 @@ export default function DashboardPage() {
             </div>
             <p className="text-xs text-[#0F766E] font-bold bg-[#0F766E]/5 px-2.5 py-1 rounded-lg w-fit">
               Rasio HPP:{" "}
-              {Math.floor(summary?.marginPercentages?.cogsMargin)}%
+              {Math.round(summary?.marginPercentages?.cogsMargin)}%
             </p>
           </div>
 
@@ -320,7 +320,7 @@ export default function DashboardPage() {
             </div>
             <p className="text-xs text-[#0F766E] font-bold bg-[#0F766E]/5 px-2.5 py-1 rounded-lg w-fit">
               Gross Margin:{" "}
-              {Math.floor(summary?.marginPercentages?.grossMargin)}%
+              {Math.round(summary?.marginPercentages?.grossMargin)}%
             </p>
           </div>
 
