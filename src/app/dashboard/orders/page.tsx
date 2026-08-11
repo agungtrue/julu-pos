@@ -21,7 +21,8 @@ import {
   Box,
   CupSoda,
   Cookie,
-  ReceiptText
+  ReceiptText,
+  Lightbulb,
 } from "lucide-react";
 import { ProductItem, CartItem } from "./types/order.types";
 import { Toaster, toast } from "sonner";
@@ -195,11 +196,14 @@ export default function CreateOrderPage() {
 
       if (isPayLater) {
         toast.success("Transaksi tersimpan!", {
-          description: "Pesanan telah disimpan, silahkan periksa kembali di Riwayat Transaksi.",
+          description:
+            "Pesanan telah disimpan, silahkan periksa kembali di Riwayat Transaksi.",
           className:
             "bg-emerald-50 border-emerald-200 text-emerald-800 rounded-xl",
         });
       }
+
+      resetAll()
     },
   });
 
@@ -224,7 +228,8 @@ export default function CreateOrderPage() {
     },
     onSuccess: (res) => {
       toast.success("Transaksi Berhasil!", {
-        description: "Pesanan telah disimpan, silahkan cek di Riwayat Transaksi.",
+        description:
+          "Pesanan telah disimpan, silahkan cek di Riwayat Transaksi.",
         className:
           "bg-emerald-50 border-emerald-200 text-emerald-800 rounded-xl",
       });
@@ -241,6 +246,14 @@ export default function CreateOrderPage() {
       }
     },
   });
+
+  const resetAll = () => {
+    setOrderUuid(null);
+    setCart([]);
+    setCashReceived("");
+    setIsConfirmLoading(false);
+    setIsPayLater(false);
+  };
 
   const getPrintReceipt = (payload: any) => {
     const tenant = {
@@ -738,6 +751,18 @@ export default function CreateOrderPage() {
               />
             </button>
           </div>
+
+          {isPayLater && (
+            <div className="p-2.5 bg-amber-50/80 border border-amber-200/60 rounded-xl flex items-start gap-2 animate-scale-up">
+              <Lightbulb className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
+              <p className="text-[10.5px] text-amber-800 font-medium leading-tight">
+                <strong className="font-extrabold text-amber-900">
+                  Tips Kasir:
+                </strong>{" "}
+                Isi nama pelanggan, biar gampang cari kalau dia bayar nanti.
+              </p>
+            </div>
+          )}
 
           {/* 6. ACTION BUTTONS (INIT & CONFIRM) */}
           {isPayLater ? (
