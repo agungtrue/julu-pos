@@ -18,6 +18,7 @@ import {
   Loader2,
   TrendingDown,
   PackageCheck,
+  ArrowRight,
   ArrowLeft,
   Flame,
   Package,
@@ -839,7 +840,7 @@ const ModalRestockIn: React.FC<ModalRestockInProps> = ({ onClose }) => {
                       <span className="text-slate-500 line-through">
                         Rp {calculation.oldCost.toLocaleString()}
                       </span>
-                      <ArrowUpRight className="w-3 h-3 text-slate-400" />
+                      <ArrowRight className="w-3 h-3 text-slate-400" />
                       <span className="text-[#0F766E] text-xs">
                         Rp {calculation.newCost.toLocaleString()}
                       </span>
@@ -1163,7 +1164,7 @@ const ModalRecordLoss: React.FC<ModalLossProps> = ({ onClose }) => {
                   </p>
                   <div className="flex items-center gap-1 font-extrabold text-slate-800 mt-0.5">
                     <span>{calculation.previousStock.toLocaleString()}</span>
-                    <ArrowUpRight className="w-3 h-3 text-slate-400" />
+                    <ArrowRight className="w-3 h-3 text-slate-400" />
                     <span className="text-rose-600">
                       {calculation.projectedStock.toLocaleString()}{" "}
                       {selectedIngredient.unit}
