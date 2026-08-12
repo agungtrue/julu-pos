@@ -6,13 +6,14 @@ import api from "../../../lib/api";
 import { formatJuluDate } from "../../../lib/utils";
 import { endpoints } from "../../../config/enpoints";
 import DashboardSkeleton from "@/components/DashboardSkeleton";
-import { Search } from "lucide-react";
+import { Search, DownloadIcon } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import dayjs from "dayjs";
 import { Trash2, CheckIcon } from "lucide-react";
 import { Toaster, toast } from "sonner";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { ProductItem, CartItem } from "../orders/types/order.types";
+import ScrollToTop from "@/components/ScrollToTop";
 
 interface TransactionDetail {
   name: string;
@@ -218,6 +219,8 @@ export default function SalesLogPage() {
         queryKey: ["orderSummaryData", "today"],
       });
       queryClient.invalidateQueries({ queryKey: ["orderListData"] });
+      queryClient.invalidateQueries({ queryKey: ["ingreMutation"] });
+      queryClient.invalidateQueries({ queryKey: ["mutationSummaryData"] });
       setIsDeleting(false);
       setDeleteModal({ isOpen: false, orderId: null });
     },
@@ -352,33 +355,33 @@ export default function SalesLogPage() {
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <button
             onClick={() => setOrderTime("today")}
-            className={`px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 ${
+            className={`px-4 py-2 text-xs cursor-pointer font-bold rounded-lg transition-all duration-200 ${
               orderTime === "today"
                 ? "bg-white text-teal-700 shadow-sm"
                 : "text-gray-500 hover:text-gray-800"
             }`}
           >
-            Hari Ini
+            HARI INI
           </button>
           <button
             onClick={() => setOrderTime("pending")}
-            className={`px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 ${
+            className={`px-4 py-2 text-xs cursor-pointer font-bold rounded-lg transition-all duration-200 ${
               orderTime === "pending"
                 ? "bg-white text-teal-700 shadow-sm"
                 : "text-gray-500 hover:text-gray-800"
             }`}
           >
-            Belum Bayar
+            BELUM BAYAR
           </button>
           <button
             onClick={() => setOrderTime("")}
-            className={`px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 ${
+            className={`px-4 py-2 text-xs cursor-pointer font-bold rounded-lg transition-all duration-200 ${
               orderTime === ""
                 ? "bg-white text-teal-700 shadow-sm"
                 : "text-gray-500 hover:text-gray-800"
             }`}
           >
-            Semua
+            SEMUA
           </button>
         </div>
 
@@ -387,20 +390,8 @@ export default function SalesLogPage() {
             onClick={() => setIsOpen(true)}
             className="w-full sm:w-auto px-5 py-2.5 bg-[#0A8F8A] hover:bg-[#08736f] text-white text-sm font-semibold rounded-xl transition-all duration-200 shadow-sm flex items-center justify-center gap-2 group"
           >
-            <svg
-              className="w-4 h-4 text-white group-hover:translate-y-0.5 transition-transform duration-200"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2.5"
-                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-              />
-            </svg>
-            Unduh Laporan
+            <DownloadIcon size={16} />
+            UNDUH LAPORAN
           </button>
         </div>
       </div>
@@ -426,7 +417,7 @@ export default function SalesLogPage() {
               onClick={() => setFilterMethod(method)}
               className={`px-4 py-2 rounded-lg transition-all ${filterMethod === method ? "bg-white text-gray-800 shadow-sm" : "text-gray-400 hover:text-gray-600"}`}
             >
-              {method === "ALL" ? "Semua" : method}
+              {method === "ALL" ? "SEMUA" : method?.toLocaleUpperCase()}
             </button>
           ))}
         </div>
@@ -897,6 +888,7 @@ export default function SalesLogPage() {
         isLoading={isConfirming}
       />
 
+      <ScrollToTop />
       <Toaster />
     </div>
   );

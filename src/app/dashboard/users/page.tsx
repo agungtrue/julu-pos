@@ -6,6 +6,7 @@ import api from "../../../lib/api";
 import { formatJuluDate } from "../../../lib/utils";
 import { endpoints } from "../../../config/enpoints";
 import DashboardSkeleton from "@/components/DashboardSkeleton";
+import ScrollToTop from "@/components/ScrollToTop";
 import { Eye, EyeClosed, Save } from "lucide-react";
 import { Toaster, toast } from "sonner";
 import { useAuthStore } from '@/stores/authStore';
@@ -338,7 +339,7 @@ export default function UserManagementPage() {
                 </div>
 
                 {/* Tombol Kontrol Suspend (Jempol Kanan Mudah Dijangkau) */}
-                <button
+                {/* <button
                   onClick={() => handleToggleStatus(user.id)}
                   className={`px-3 py-1.5 rounded-xl text-[10px] font-extrabold border transition-all active:scale-95 shrink-0 ${
                     user.isActive
@@ -347,7 +348,7 @@ export default function UserManagementPage() {
                   }`}
                 >
                   {user.isActive ? "Suspend" : "Aktifkan"}
-                </button>
+                </button> */}
               </div>
 
               {/* Seksi Tengah: Metrik Performa Kerja Karyawan */}
@@ -369,7 +370,7 @@ export default function UserManagementPage() {
               {/* Seksi Bawah: Metadata Audit Trail (Tanggal Join & Last Login) */}
               <div className="flex items-center justify-between text-[11px] text-gray-700 font-semibold pt-1 border-t border-gray-100 flex-wrap gap-y-1">
                 <div>
-                  📅 Join:{" "}
+                  Join:{" "}
                   <span className="text-gray-900 font-bold">
                     {formatJuluDate(user.created_at)}
                   </span>
@@ -394,6 +395,7 @@ export default function UserManagementPage() {
           </div>
         )}
       </div>
+      <ScrollToTop />
     </div>
   );
 }
