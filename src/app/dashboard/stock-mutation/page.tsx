@@ -21,7 +21,6 @@ import {
   ArrowLeft,
   Flame,
   Package,
-  CrossIcon
 } from "lucide-react";
 import { formatJuluDate, formatStockValue } from "../../../lib/utils";
 
@@ -840,7 +839,7 @@ const ModalRestockIn: React.FC<ModalRestockInProps> = ({ onClose }) => {
                       <span className="text-slate-500 line-through">
                         Rp {calculation.oldCost.toLocaleString()}
                       </span>
-                      <ArrowRight className="w-3 h-3 text-slate-400" />
+                      <ArrowUpRight className="w-3 h-3 text-slate-400" />
                       <span className="text-[#0F766E] text-xs">
                         Rp {calculation.newCost.toLocaleString()}
                       </span>
