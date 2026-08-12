@@ -6,12 +6,7 @@ import { endpoints } from "../../../config/enpoints";
 import api from "../../../lib/api";
 import DashboardSkeleton from "@/components/DashboardSkeleton";
 import { formatDate } from "../../../lib/utils";
-
-// Data komponen opex riil sesuai angka booth kopi Junior Anda (Total: Rp 81.191)
-// const INITIAL_OPEX_COMPONENTS = [
-//   { id: '1', name: 'Sewa Tempat (Booth)', dailyAmount: 200000 },
-//   { id: '2', name: 'Alokasi Gaji & Lain-lain', dailyAmount: 88691 },
-// ];
+import ScrollToTop from "@/components/ScrollToTop";
 
 interface Opex {
   id: string;
@@ -607,6 +602,7 @@ export default function OpexManagementPage() {
           </div>
         </div>
       </div>
+      <ScrollToTop />
     </div>
   );
 }

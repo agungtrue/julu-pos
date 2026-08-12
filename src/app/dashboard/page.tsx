@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import api from "../../lib/api";
 import { endpoints } from "../../config/enpoints";
 import DashboardSkeleton from "@/components/DashboardSkeleton";
+import { UserPerformanceSection } from "@/components/UserPerformanceSection";
 import { useAuthStore } from "@/stores/authStore";
 import { LowStockModal } from "@/components/LowStockModal";
 import { getPeriodLabel } from "@/lib/utils";
@@ -147,7 +148,7 @@ export default function DashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="relative pl-3.5 border-l-4 border-teal-600">
           <h1 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-2">
-            <span >Halo, {user?.name}</span>
+            <span>Halo, {user?.name}</span>
             <span className="text-gray-300 font-light">|</span>
             <span className="text-teal-700 text-lg font-bold">
               Ringkasan Performa
@@ -266,8 +267,6 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* 💰 MAIN FINANCIAL CARDS GRID */}
-      {/* OWNER_ADMIN */}
       {user?.role === "OWNER_ADMIN" && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
@@ -304,8 +303,7 @@ export default function DashboardPage() {
               </h3>
             </div>
             <p className="text-xs text-[#0F766E] font-bold bg-[#0F766E]/5 px-2.5 py-1 rounded-lg w-fit">
-              Rasio HPP:{" "}
-              {Math.round(summary?.marginPercentages?.cogsMargin)}%
+              Rasio HPP: {Math.round(summary?.marginPercentages?.cogsMargin)}%
             </p>
           </div>
 
@@ -350,10 +348,11 @@ export default function DashboardPage() {
 
             <div>
               <p className="text-xs text-gray-400 font-medium">
-              <span className="text-red-500 font-semibold">
-                {summary?.lossMutation?.count}x
-              </span> Catatan
-            </p>
+                <span className="text-red-500 font-semibold">
+                  {summary?.lossMutation?.count}x
+                </span>{" "}
+                Catatan
+              </p>
             </div>
           </div>
 
@@ -537,85 +536,88 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Stat Box Trigger untuk Dashboard Grid */}
-      <div
-        onClick={() => {
-          if (summary?.stockAlerts?.length > 0) {
-            setIsLowStockModalOpen(true);
-          }
-        }}
-        className={`bg-white border rounded-2xl p-5 shadow-sm transition-all flex items-center justify-between group ${
-          summary?.stockAlerts?.length > 0
-            ? "border-amber-200 bg-amber-50/20 hover:border-amber-300 cursor-pointer"
-            : "border-gray-100"
-        }`}
-      >
-        <div className="flex items-center gap-4">
-          {/* Icon Container */}
-          <div
-            className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 ${
-              summary?.stockAlerts?.length > 0
-                ? "bg-amber-500 text-white shadow-md shadow-amber-500/20"
-                : "bg-[#0A8F8A]/10 text-[#0A8F8A]"
-            }`}
-          >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+      {user?.role === "OWNER_ADMIN" && (
+        <div
+          onClick={() => {
+            if (summary?.stockAlerts?.length > 0) {
+              setIsLowStockModalOpen(true);
+            }
+          }}
+          className={`bg-white border rounded-2xl p-5 shadow-sm transition-all flex items-center justify-between group ${
+            summary?.stockAlerts?.length > 0
+              ? "border-amber-200 bg-amber-50/20 hover:border-amber-300 cursor-pointer"
+              : "border-gray-100"
+          }`}
+        >
+          <div className="flex items-center gap-4">
+            {/* Icon Container */}
+            <div
+              className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 ${
+                summary?.stockAlerts?.length > 0
+                  ? "bg-amber-500 text-white shadow-md shadow-amber-500/20"
+                  : "bg-[#0A8F8A]/10 text-[#0A8F8A]"
+              }`}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-              />
-            </svg>
-          </div>
-
-          <div>
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-0.5">
-              Stok Kritis
-            </span>
-            <div className="flex items-baseline gap-2">
-              <span
-                className={`text-2xl font-extrabold tracking-tight ${
-                  summary?.stockAlerts?.length > 0
-                    ? "text-amber-600"
-                    : "text-gray-900"
-                }`}
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                {summary?.stockAlerts?.length || 0}
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                />
+              </svg>
+            </div>
+
+            <div>
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-0.5">
+                Stok Kritis
               </span>
-              <span className="text-xs font-semibold text-gray-500">Bahan</span>
+              <div className="flex items-baseline gap-2">
+                <span
+                  className={`text-2xl font-extrabold tracking-tight ${
+                    summary?.stockAlerts?.length > 0
+                      ? "text-amber-600"
+                      : "text-gray-900"
+                  }`}
+                >
+                  {summary?.stockAlerts?.length || 0}
+                </span>
+                <span className="text-xs font-semibold text-gray-500">
+                  Bahan
+                </span>
+              </div>
             </div>
           </div>
-        </div>
 
-        {summary?.stockAlerts?.length > 0 ? (
-          <div className="flex items-center gap-1 text-xs font-bold text-amber-600 bg-amber-100/60 px-3 py-1.5 rounded-xl group-hover:bg-amber-600 group-hover:text-white transition-all">
-            <span>Lihat Detail</span>
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M9 5l7 7-7 7"
-              />
-            </svg>
-          </div>
-        ) : (
-          <span className="text-[10px] font-bold uppercase tracking-wider text-[#0A8F8A] bg-[#0A8F8A]/10 px-2.5 py-1 rounded-full">
-            Aman
-          </span>
-        )}
-      </div>
+          {summary?.stockAlerts?.length > 0 ? (
+            <div className="flex items-center gap-1 text-xs font-bold text-amber-600 bg-amber-100/60 px-3 py-1.5 rounded-xl group-hover:bg-amber-600 group-hover:text-white transition-all">
+              <span>Lihat Detail</span>
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </div>
+          ) : (
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#0A8F8A] bg-[#0A8F8A]/10 px-2.5 py-1 rounded-full">
+              Aman
+            </span>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-1 bg-white border border-gray-100 p-6 rounded-3xl shadow-sm">
@@ -650,9 +652,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="bg-gray-50/60 border border-gray-100 p-4 rounded-2xl flex justify-between items-center">
-              <span className="text-sm font-bold text-gray-700">
-                Cemilan
-              </span>
+              <span className="text-sm font-bold text-gray-700">Cemilan</span>
               <span className="text-sm font-black text-[#EF5B2B] font-mono">
                 {summary?.snacks} Porsi
               </span>
@@ -678,7 +678,11 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="lg:col-span-2 bg-white border border-gray-100 p-6 rounded-3xl shadow-sm">
+          {user?.role === "OWNER_ADMIN" && (
+            <UserPerformanceSection performances={summary.performances} />
+          )}
+
+        <div className="lg:col-span-1 bg-white border border-gray-100 p-6 rounded-3xl shadow-sm">
           <h4 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-6 border-l-4 border-[#EF5B2B] pl-3">
             Menu Paling Laris (Best Seller)
           </h4>

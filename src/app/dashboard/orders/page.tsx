@@ -5,6 +5,7 @@ import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { endpoints } from "../../../config/enpoints";
 import api from "../../../lib/api";
 import DashboardSkeleton from "@/components/DashboardSkeleton";
+import ScrollToTop from "@/components/ScrollToTop";
 import {
   LayoutGrid,
   Coffee,
@@ -51,7 +52,7 @@ export default function CreateOrderPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orderUuid, setOrderUuid] = useState(null);
-  const [customerName, setCustomerName] = useState("Walk-in Customer");
+  const [customerName, setCustomerName] = useState("");
   const [isPrintReceipt, setIsPrintReceipt] = useState(true);
   const [isPayLater, setIsPayLater] = useState(false);
   const [isPreConfirmLoading, setIsPreConfirmLoading] = useState(false);
@@ -234,6 +235,9 @@ export default function CreateOrderPage() {
       });
 
       queryClient.invalidateQueries({ queryKey: ["orderListData"] });
+      queryClient.invalidateQueries({ queryKey: ["orderSummaryData"] });
+      queryClient.invalidateQueries({ queryKey: ["ingreMutation"] });
+      queryClient.invalidateQueries({ queryKey: ["mutationSummaryData"] });
       setOrderUuid(null);
       setCart([]);
       setCashReceived("");
@@ -453,7 +457,7 @@ export default function CreateOrderPage() {
               type="text"
               value={customerName}
               onChange={(e) => setCustomerName(e.target.value)}
-              placeholder="Walk-in Customer (Guest)"
+              placeholder="Isi Nama Pelanggan jika diperlukan..."
               className="w-full pl-8 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#EF5B2B] transition-colors"
             />
           </div>
@@ -815,6 +819,7 @@ export default function CreateOrderPage() {
         </div>
       </div>
       <Toaster />
+      <ScrollToTop />
     </div>
   );
 }

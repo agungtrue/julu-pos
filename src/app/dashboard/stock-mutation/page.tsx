@@ -19,13 +19,14 @@ import {
   TrendingDown,
   PackageCheck,
   ArrowRight,
+  ArrowLeft,
   Flame,
   Package,
 } from "lucide-react";
 import { formatJuluDate, formatStockValue } from "../../../lib/utils";
 
 // Enums Status Mutasi
-type MutationType = "ALL" | "RESTOCK_IN" | "USAGE_OUT" | "LOSS" | "ADJUSTMENT";
+type MutationType = "ALL" | "RESTOCK_IN" | "USAGE_OUT" | "LOSS" | "ADJUSTMENT" | "CANCEL";
 
 interface Ingredient {
   id: string;
@@ -123,6 +124,12 @@ export default function StockMutationPage() {
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
             <RefreshCw className="w-3.5 h-3.5 text-amber-600" /> Stock Opname
+          </span>
+        );
+      case "CANCEL":
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+            <ArrowLeft className="w-3.5 h-3.5 text-amber-600" /> Pembatalan
           </span>
         );
       default:
@@ -324,7 +331,7 @@ export default function StockMutationPage() {
                     Perubahan
                   </p>
                   <p className="font-extrabold font-mono text-sm mt-0.5 whitespace-nowrap">
-                    {log.quantity > 0 ? (
+                    {["CANCEL", "RESTOCK_IN"].includes(log.type) ? (
                       <span className="text-emerald-600">
                         +{formatStockValue(log.quantity)}{" "}
                         <span className="text-[10px] font-bold text-emerald-700/70">
@@ -333,7 +340,7 @@ export default function StockMutationPage() {
                       </span>
                     ) : (
                       <span className="text-rose-600">
-                        {formatStockValue(log.quantity)}{" "}
+                        -{formatStockValue(log.quantity)}{" "}
                         <span className="text-[10px] font-bold text-rose-700/70">
                           {log.ingredient?.unit}
                         </span>
@@ -420,13 +427,13 @@ export default function StockMutationPage() {
                   <td className="p-4">{renderBadge(log.type)}</td>
 
                   <td className="p-4 text-right font-extrabold font-mono text-sm">
-                    {log.quantity > 0 ? (
+                    {["CANCEL", "RESTOCK_IN"].includes(log.type) ? (
                       <span className="text-emerald-600">
                         +{formatStockValue(log.quantity)} {log.ingredient?.unit}
                       </span>
                     ) : (
                       <span className="text-rose-600">
-                        {formatStockValue(log.quantity)} {log.ingredient?.unit}
+                        -{formatStockValue(log.quantity)} {log.ingredient?.unit}
                       </span>
                     )}
                   </td>
