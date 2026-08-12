@@ -1163,7 +1163,7 @@ const ModalRecordLoss: React.FC<ModalLossProps> = ({ onClose }) => {
                   </p>
                   <div className="flex items-center gap-1 font-extrabold text-slate-800 mt-0.5">
                     <span>{calculation.previousStock.toLocaleString()}</span>
-                    <ArrowRight className="w-3 h-3 text-slate-400" />
+                    <ArrowUpRight className="w-3 h-3 text-slate-400" />
                     <span className="text-rose-600">
                       {calculation.projectedStock.toLocaleString()}{" "}
                       {selectedIngredient.unit}
