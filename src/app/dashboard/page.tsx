@@ -7,19 +7,49 @@ import api from "../../lib/api";
 import { endpoints } from "../../config/enpoints";
 import DashboardSkeleton from "@/components/DashboardSkeleton";
 import { UserPerformanceSection } from "@/components/UserPerformanceSection";
+import {
+  ProductSalesSummarySection,
+  ProductType,
+} from "@/components/ProductSalesSummarySection";
 import { useAuthStore } from "@/stores/authStore";
 import { LowStockModal } from "@/components/LowStockModal";
-import { getPeriodLabel } from "@/lib/utils";
+import { getPeriodLabel, formatDateYMD, formatIndo, getTodayWIB } from "@/lib/utils";
 import ScrollToTop from "@/components/ScrollToTop";
 import Link from "next/link";
+import { Calendar } from "lucide-react";
 
 export default function DashboardPage() {
+  type TimeFilterType =
+    | "today"
+    | "yesterday"
+    | "month"
+    | "last_month"
+    | "custom";
+
+  interface DateRange {
+    startDate: string;
+    endDate: string;
+  }
+
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
 
   const [timeFilter, setTimeFilter] = useState<
     "today" | "month" | "yesterday" | "last_month" | "custom"
   >("today");
+
+  const todayStr = getTodayWIB()
+
+  const [appliedFilter, setAppliedFilter] = useState({
+    startDate: todayStr,
+    endDate: todayStr,
+  });
+  const [customRange, setCustomRange] = useState<DateRange>({
+    startDate: todayStr,
+    endDate: todayStr,
+  });
+
+  const [showCustomPicker, setShowCustomPicker] = useState<boolean>(false);
 
   const getDateParamsForThisMonth = () => {
     const today = new Date();
@@ -78,7 +108,8 @@ export default function DashboardPage() {
   const fetchSummaryData = async (
     filter: "today" | "month" | "yesterday" | "last_month" | "custom",
   ) => {
-    let url = endpoints.orders.summary.get;
+    // let url = endpoints.orders.summary.get;
+    let url = endpoints.dashboard.summary;
 
     if (filter === "month") {
       const { startDate, endDate } = getDateParamsForThisMonth();
@@ -89,14 +120,44 @@ export default function DashboardPage() {
     } else if (filter === "last_month") {
       const { startDate, endDate } = getDateParamsForLastMonth();
       url = `${url}?startDate=${startDate}&endDate=${endDate}`;
+    } else if (filter === "custom") {
+      url = `${url}?startDate=${customRange.startDate}&endDate=${customRange.endDate}`;
     }
 
     const response = await api.get(url);
     return response?.data?.data?.[0];
   };
 
+  const handlePresetClick = (filter: TimeFilterType) => {
+    if (filter !== "custom") {
+      setShowCustomPicker(false);
+    } else {
+      setShowCustomPicker(!showCustomPicker);
+    }
+  };
+
+  const handleCustomApply = () => {
+    if (customRange.startDate && customRange.endDate) {
+      setAppliedFilter((prev) => ({
+        ...prev,
+        startDate: customRange.startDate,
+        endDate: customRange.endDate,
+      }));
+      setTimeFilter("custom");
+      setShowCustomPicker(false);
+    }
+  };
+
   const { data: summary, isLoading } = useQuery({
-    queryKey: ["orderSummaryData", timeFilter],
+    // queryKey: ["orderSummaryData", timeFilter],
+    queryKey: [
+      "orderSummaryData",
+      {
+        timeFilter,
+        startDate: appliedFilter.startDate,
+        endDate: appliedFilter.endDate,
+      },
+    ],
     queryFn: () => fetchSummaryData(timeFilter),
     enabled: user?.role !== "SUPER_ADMIN",
   });
@@ -156,7 +217,11 @@ export default function DashboardPage() {
           </h1>
 
           <p className="text-xs text-gray-400 font-medium mt-0.5">
-            PERIODE: {getPeriodLabel(timeFilter)} • {user?.tenant?.name}
+            PERIODE:{" "}
+            {timeFilter === "custom"
+              ? `Kustom (${formatIndo(new Date(customRange.startDate))} - ${formatIndo(new Date(customRange.endDate))})`
+              : getPeriodLabel(timeFilter)}{" "}
+            • {user?.tenant?.name}
           </p>
         </div>
         <div className="bg-white border border-gray-200 px-4 py-2.5 rounded-2xl flex items-center gap-3 w-fit shadow-sm">
@@ -216,22 +281,17 @@ export default function DashboardPage() {
             Bulan Lalu
           </button>
 
-          {/* 💡 2. CUSTOM DATE PICKER (DI SAMPING LAST MONTH) */}
-          {/* <div className="relative flex items-center ml-1 border-l border-gray-300/60 pl-1">
-            <input
-              type="date"
-                value={customDate || ""}
-              onChange={(e) => {
-                setCustomDate(e.target.value);
-                setTimeFilter("custom");
-              }}
-              className={`px-3 py-1.5 text-xs font-bold rounded-lg cursor-pointer focus:outline-none transition-all duration-200 border-0 ${
-                timeFilter === "custom"
-                  ? "bg-white text-teal-700 shadow-sm"
-                  : "bg-transparent text-gray-500 hover:text-gray-800"
-              }`}
-            />
-          </div> */}
+          <button
+            onClick={() => handlePresetClick("custom")}
+            className={`px-4 cursor-pointer py-2 text-xs font-bold rounded-lg transition-all duration-200 flex items-center gap-1.5 ${
+              timeFilter === "custom"
+                ? "bg-white text-teal-700 shadow-sm"
+                : "text-gray-500 hover:text-gray-800"
+            }`}
+          >
+            <Calendar className="w-3.5 h-3.5" />
+            <span>Kustom</span>
+          </button>
         </div>
 
         {user?.role === "OWNER_ADMIN" && (
@@ -328,7 +388,7 @@ export default function DashboardPage() {
                 Biaya Operasional Harian
               </span>
               <h3 className={`text-2xl font-black tracking-tight text-red-500`}>
-                {formatIDR(summary?.opex?.dailyAmount)}
+                {formatIDR(summary?.totalOpex)}
               </h3>
             </div>
             <p className="text-xs text-gray-400 font-medium">
@@ -409,15 +469,15 @@ export default function DashboardPage() {
           <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
             <div>
               <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-                Cup Terjual/Target Cup
+                Item Terjual/Target Item
               </span>
               <h3 className="text-2xl font-black text-gray-800 tracking-tight">
-                {summary?.cups.total}/
-                {Math.ceil(summary?.breakEvenRevenue?.targetCupsCount)}
+                {summary?.totalItemsSold}/
+                {Math.ceil(summary?.breakEvenRevenue?.targetItemsCount)}
               </h3>
             </div>
 
-            <div>
+            {/* <div>
               <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
                 Cemilan terjual/Target Cemilan
               </span>
@@ -425,7 +485,7 @@ export default function DashboardPage() {
                 {summary?.snacks}/
                 {Math.ceil(summary?.breakEvenRevenue?.targetSnackCount)}
               </h3>
-            </div>
+            </div> */}
           </div>
 
           <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
@@ -620,67 +680,15 @@ export default function DashboardPage() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-1 bg-white border border-gray-100 p-6 rounded-3xl shadow-sm">
-          <h4 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-6 border-l-4 border-[#0F766E] pl-3">
-            Jumlah Menu Terjual
-          </h4>
+        <ProductSalesSummarySection
+          categorySales={summary?.categorySales}
+          averageBasketSize={summary?.transactionMetrics?.avgTransactionValue}
+          txPerDay={summary?.transactionMetrics?.avgTransactionsPerDay}
+        />
 
-          <div className="space-y-5">
-            <div className="bg-gray-50/60 border border-gray-100 p-4 rounded-2xl">
-              <div className="flex justify-between items-center mb-3">
-                <span className="text-sm font-bold text-gray-700">
-                  Total Minuman
-                </span>
-                <span className="text-sm font-black text-[#0F766E] font-mono">
-                  {summary?.cups.total} Cups
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-xs text-gray-500 pt-2 border-t border-gray-200/60 font-medium">
-                <div>
-                  Kopi:{" "}
-                  <span className="text-gray-800 font-bold">
-                    {summary?.cups.coffee}
-                  </span>
-                </div>
-                <div>
-                  Non-Kopi:{" "}
-                  <span className="text-gray-800 font-bold">
-                    {summary?.cups.nonCoffee}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gray-50/60 border border-gray-100 p-4 rounded-2xl flex justify-between items-center">
-              <span className="text-sm font-bold text-gray-700">Cemilan</span>
-              <span className="text-sm font-black text-[#EF5B2B] font-mono">
-                {summary?.snacks} Porsi
-              </span>
-            </div>
-
-            <div className="border-t border-gray-100 pt-4 space-y-2.5 text-xs text-gray-500 font-medium">
-              <div className="flex justify-between">
-                <span>Rata-rata Belanja Pelanggan:</span>
-                <span className="text-gray-800 font-bold">
-                  {formatIDR(summary?.transactionMetrics?.avgTransactionValue)}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span>Frekuensi Transaksi / Hari:</span>
-                <span className="text-gray-800 font-bold">
-                  {Math.ceil(
-                    summary?.transactionMetrics?.avgTransactionsPerDay,
-                  )}{" "}
-                  Tx/Hari
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-          {user?.role === "OWNER_ADMIN" && (
-            <UserPerformanceSection performances={summary.performances} />
-          )}
+        {user?.role === "OWNER_ADMIN" && (
+          <UserPerformanceSection performances={summary.performances} />
+        )}
 
         <div className="lg:col-span-1 bg-white border border-gray-100 p-6 rounded-3xl shadow-sm">
           <h4 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-6 border-l-4 border-[#EF5B2B] pl-3">
@@ -728,6 +736,131 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {showCustomPicker && (
+        <div
+          className="fixed top-0 left-0 right-0 bottom-0 w-screen h-screen z-[9999] bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={() => setShowCustomPicker(false)}
+        >
+          {/* Modal Container */}
+          <div
+            className="bg-white rounded-2xl shadow-2xl border border-gray-100 w-full max-w-sm p-5 flex flex-col gap-4 animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header Modal */}
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-teal-50 text-teal-600 rounded-xl">
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-gray-800">
+                    Pilih Rentang Tanggal
+                  </h3>
+                  <p className="text-[11px] text-gray-400 font-medium">
+                    Atur periode transaksi yang ingin dianalisis
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowCustomPicker(false)}
+                className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            {/* Body Modal (Form Inputs) */}
+            <div className="flex flex-col gap-3">
+              <div>
+                <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block mb-1">
+                  Tanggal Mulai
+                </label>
+                <input
+                  type="date"
+                  value={customRange.startDate}
+                  onClick={(e) => {
+                    try {
+                      e.currentTarget.showPicker();
+                    } catch (err) {}
+                  }}
+                  onChange={(e) =>
+                    setCustomRange((prev) => ({
+                      ...prev,
+                      startDate: e.target.value,
+                    }))
+                  }
+                  className="w-full text-xs font-semibold bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all cursor-pointer"
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block mb-1">
+                  Tanggal Selesai
+                </label>
+                <input
+                  type="date"
+                  value={customRange.endDate}
+                  max={formatDateYMD(new Date())}
+                  onClick={(e) => {
+                    try {
+                      e.currentTarget.showPicker();
+                    } catch (err) {}
+                  }}
+                  onChange={(e) =>
+                    setCustomRange((prev) => ({
+                      ...prev,
+                      endDate: e.target.value,
+                    }))
+                  }
+                  className="w-full text-xs font-semibold bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-all cursor-pointer"
+                />
+              </div>
+            </div>
+
+            {/* Footer Modal (Action Buttons) */}
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
+              <button
+                onClick={() => setShowCustomPicker(false)}
+                className="px-4 py-2 text-xs font-bold text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-all cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleCustomApply}
+                className="px-4 py-2 text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 rounded-xl shadow-md shadow-teal-600/20 active:scale-95 transition-all cursor-pointer"
+              >
+                Terapkan Filter
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <LowStockModal
         isOpen={isLowStockModalOpen}
