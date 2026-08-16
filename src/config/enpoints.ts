@@ -30,6 +30,9 @@ export const endpoints = {
     loss: `${BASE_URL}/ingredients/mutations/loss`,
     summary: `${BASE_URL}/ingredients/mutations/summary`,
   },
+  dashboard: {
+    summary: `${BASE_URL}/dashboard/summary`,
+  },
   orders: {
     summary: {
       get: `${BASE_URL}/orders/summary`,
