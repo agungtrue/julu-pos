@@ -202,7 +202,7 @@ export default function CreateOrderPage() {
           className:
             "bg-emerald-50 border-emerald-200 text-emerald-800 rounded-xl",
         });
-        resetAll()
+        resetAll();
       }
     },
   });
@@ -693,42 +693,6 @@ export default function CreateOrderPage() {
           )}
 
           {/* 5. TOGGLE CETAK STRUK OTOMATIS */}
-          <div className="flex items-center justify-between p-2.5 bg-white border border-gray-200 rounded-xl shadow-xs">
-            <div className="flex items-center gap-2">
-              <svg
-                className="w-4 h-4 text-[#0F766E]"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 000-4H9a2 2 0 000 4zm8-12V5a2 2 0 00-2-2H7a2 2 0 00-2 2v4h14z"
-                />
-              </svg>
-              <span className="text-xs font-bold text-gray-700">
-                Cetak Struk
-              </span>
-            </div>
-
-            <button
-              type="button"
-              role="switch"
-              aria-checked={isPrintReceipt}
-              onClick={() => setIsPrintReceipt(!isPrintReceipt)}
-              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                isPrintReceipt ? "bg-[#0F766E]" : "bg-gray-300"
-              }`}
-            >
-              <span
-                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out ${
-                  isPrintReceipt ? "translate-x-4" : "translate-x-0"
-                }`}
-              />
-            </button>
-          </div>
 
           <div className="flex items-center justify-between p-2.5 bg-white border border-gray-200 rounded-xl shadow-xs">
             <div className="flex items-center gap-2">
@@ -764,6 +728,45 @@ export default function CreateOrderPage() {
                 </strong>{" "}
                 Isi nama pelanggan, biar gampang cari kalau dia bayar nanti.
               </p>
+            </div>
+          )}
+
+          {!isPayLater && (
+            <div className="flex items-center justify-between p-2.5 bg-white border border-gray-200 rounded-xl shadow-xs">
+              <div className="flex items-center gap-2">
+                <svg
+                  className="w-4 h-4 text-[#0F766E]"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 000-4H9a2 2 0 000 4zm8-12V5a2 2 0 00-2-2H7a2 2 0 00-2 2v4h14z"
+                  />
+                </svg>
+                <span className="text-xs font-bold text-gray-700">
+                  Cetak Struk
+                </span>
+              </div>
+
+              <button
+                type="button"
+                role="switch"
+                aria-checked={isPrintReceipt}
+                onClick={() => setIsPrintReceipt(!isPrintReceipt)}
+                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                  isPrintReceipt ? "bg-[#0F766E]" : "bg-gray-300"
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out ${
+                    isPrintReceipt ? "translate-x-4" : "translate-x-0"
+                  }`}
+                />
+              </button>
             </div>
           )}
 
