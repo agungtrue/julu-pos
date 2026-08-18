@@ -21,7 +21,15 @@ import {
 } from "@/lib/utils";
 import ScrollToTop from "@/components/ScrollToTop";
 import Link from "next/link";
-import { Calendar } from "lucide-react";
+import {
+  Calendar,
+  TrendingUp,
+  Wallet,
+  ShoppingBag,
+  Coffee,
+  Banknote,
+  QrCode,
+} from "lucide-react";
 
 export default function DashboardPage() {
   type TimeFilterType =
@@ -208,6 +216,11 @@ export default function DashboardPage() {
   const remainingDays =
     getRemainingDays(summary?.tenantSubscription?.endDate) ?? 0;
   const isUrgent = remainingDays <= 3;
+  const isProfit = (summary?.netIncomes ?? 0) >= 0;
+  const targetItem =
+    Math.ceil(summary?.breakEvenRevenue?.targetItemsCount) || 1;
+  const itemSold = summary?.totalItemsSold || 0;
+  const itemProgress = Math.min(100, Math.round((itemSold / targetItem) * 100));
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
@@ -232,7 +245,7 @@ export default function DashboardPage() {
         <div className="bg-white border border-gray-200 px-4 py-2.5 rounded-2xl flex items-center gap-3 w-fit shadow-sm">
           <span className="flex h-2.5 w-2.5 rounded-full bg-amber-500"></span>
           <span className="text-xs font-semibold text-gray-600">
-            Progress Balik Modal:{" "}
+            Pencapaian Target Harian:{" "}
             <span className="text-[#EF5B2B] font-bold">
               {Math.floor(summary?.breakEvenRevenue?.actualVsTargetPercentage)}%
             </span>
@@ -334,182 +347,291 @@ export default function DashboardPage() {
 
       {user?.role === "OWNER_ADMIN" && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
+          <div className="group relative bg-white border border-slate-200/80 hover:border-[#0F766E]/40 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between overflow-hidden">
+            <div className="absolute -top-10 -right-10 w-28 h-28 bg-[#0F766E]/5 rounded-full blur-2xl group-hover:bg-[#0F766E]/10 transition-colors" />
+
             <div>
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-                Total Pendapatan
-              </span>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                  Total Pendapatan
+                </span>
+                <div className="w-8 h-8 rounded-xl bg-teal-50 text-[#0F766E] flex items-center justify-center font-bold">
+                  <TrendingUp className="w-4 h-4" />
+                </div>
+              </div>
+
               <h3 className="text-2xl font-black text-[#0F766E] tracking-tight">
                 {formatIDR(summary?.revenues)}
               </h3>
             </div>
-            <p className="text-xs text-gray-400 font-medium">
-              Rata-rata Harian:{" "}
-              <span className="text-gray-700 font-semibold">
-                {formatIDR(summary?.transactionMetrics.avgRevPerDay)}
+
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs mt-3">
+              <span className="text-slate-400">
+                Rata-rata:{" "}
+                <strong className="text-slate-700 font-semibold">
+                  {formatIDR(summary?.transactionMetrics.avgRevPerDay)}
+                </strong>
               </span>
-            </p>
-            <p className="text-xs text-gray-400 font-medium">
-              Target:{" "}
-              <span className="text-gray-700 font-semibold">
-                {formatIDR(summary?.breakEvenRevenue.targetAmount)}
+              <span className="text-slate-400">
+                Target:{" "}
+                <strong className="text-slate-700 font-semibold">
+                  {formatIDR(summary?.breakEvenRevenue.targetAmount)}
+                </strong>
               </span>
-            </p>
-            {/* Target Amount: {formatIDR(summary?.breakEvenRevenue.targetAmount)} */}
+            </div>
           </div>
 
-          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
+          <div className="bg-white border border-slate-200/80 hover:border-slate-300 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between">
             <div>
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-                Total Biaya Bahan Baku (HPP)
-              </span>
-              <h3 className="text-2xl font-black text-gray-800 tracking-tight">
-                {formatIDR(summary?.revenues - summary?.grossIncomes)}
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                  Modal Bahan Baku (HPP)
+                </span>
+                {/* Ratio Pill Badge */}
+                <span className="text-[12px] font-bold text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-100">
+                  Rasio: {Math.round(summary?.marginPercentages?.cogsMargin)}%
+                </span>
+              </div>
+
+              <h3 className="text-2xl font-black text-slate-800 tracking-tight">
+                {formatIDR(summary?.totalCogs)}
               </h3>
             </div>
-            <p className="text-xs text-[#0F766E] font-bold bg-[#0F766E]/5 px-2.5 py-1 rounded-lg w-fit">
-              Rasio HPP: {Math.round(summary?.marginPercentages?.cogsMargin)}%
+
+            <p className="text-xs text-slate-400 pt-3 border-t border-slate-100 mt-3">
+              Total modal bahan dari menu terjual
             </p>
           </div>
 
-          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
+          <div className="bg-white border border-slate-200/80 hover:border-slate-300 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between">
             <div>
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-                Keuntungan Kotor (Gross)
-              </span>
-              <h3 className="text-2xl font-black text-gray-800 tracking-tight">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                  Keuntungan Kotor
+                </span>
+                <span className="text-[12px] font-bold text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-100">
+                  Rasio: {Math.round(summary?.marginPercentages?.grossMargin)}%
+                </span>
+              </div>
+
+              <h3 className="text-2xl font-black text-slate-800 tracking-tight">
                 {formatIDR(summary?.grossIncomes)}
               </h3>
             </div>
-            <p className="text-xs text-[#0F766E] font-bold bg-[#0F766E]/5 px-2.5 py-1 rounded-lg w-fit">
-              Gross Margin:{" "}
-              {Math.round(summary?.marginPercentages?.grossMargin)}%
+
+            <p className="text-xs text-slate-400 pt-3 border-t border-slate-100 mt-3">
+              Omset dikurangi modal bahan baku
             </p>
           </div>
 
-          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden sm:col-span-2 lg:col-span-1">
+          <div className="bg-white border border-slate-200/80 hover:border-slate-300 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between">
             <div>
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-                Biaya Operasional Harian
-              </span>
-              <h3 className={`text-2xl font-black tracking-tight text-red-500`}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                  Biaya Operasional
+                </span>
+                {/* <span className="text-[12px] font-bold text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-100">
+                  Rasio: {Math.round(summary?.marginPercentages?.grossMargin)}%
+                </span> */}
+                <div
+                  className={`w-8 h-8 rounded-xl flex items-center justify-center bg-rose-100 text-rose-600`}
+                >
+                  <Wallet className="w-4 h-4" />
+                </div>
+              </div>
+
+              <h3 className="text-2xl font-black tracking-tight text-red-500">
                 {formatIDR(summary?.totalOpex)}
               </h3>
             </div>
-            <p className="text-xs text-gray-400 font-medium">
-              {/* Sisa target ke profit: <span className="text-red-500 font-bold">{formatIDR(Math.floor(summary?.breakEvenRevenue?.excessRevenueAmount))} lagi</span> */}
+
+            <p className="text-xs text-slate-400 pt-3 border-t border-slate-100 mt-3">
+              Beban rutin (gaji, listrik, sewa, dll)
             </p>
           </div>
 
-          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
+          <div className="bg-white border border-slate-200/80 hover:border-slate-300 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between">
             <div>
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-                Total Loss Bahan Baku/Operasional
-              </span>
-              <h3 className="text-2xl font-black text-red-500 tracking-tight">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                  Bahan Terbuang/Basi (Loss)
+                </span>
+                <span className="text-[10px] font-bold text-red-500 bg-rose-100 px-2.5 py-0.5 rounded-full">
+                  {summary?.lossMutation?.count} {" Catatan"}
+                </span>
+              </div>
+
+              <h3 className="text-2xl font-black tracking-tight text-red-500">
                 {formatIDR(Math.abs(summary?.lossMutation?.totalNominal))}
               </h3>
             </div>
 
-            <div>
-              <p className="text-xs text-gray-400 font-medium">
-                <span className="text-red-500 font-semibold">
-                  {summary?.lossMutation?.count}x
-                </span>{" "}
-                Catatan
-              </p>
-            </div>
+            <p className="text-xs text-slate-400 pt-3 border-t border-slate-100 mt-3">
+              Nilai bahan tumpah, basi, atau rusak
+            </p>
           </div>
 
-          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden sm:col-span-2 lg:col-span-1">
+          <div
+            className={`group relative bg-white border rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between overflow-hidden ${
+              isProfit
+                ? "border-slate-200/80 hover:border-emerald-300"
+                : "border-rose-200/80 bg-rose-50/20"
+            }`}
+          >
             <div>
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-                Keuntungan Bersih
-              </span>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                  Keuntungan Bersih
+                </span>
+                <div
+                  className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                    isProfit
+                      ? "bg-emerald-50 text-emerald-600"
+                      : "bg-rose-100 text-rose-600"
+                  }`}
+                >
+                  <Wallet className="w-4 h-4" />
+                </div>
+              </div>
+
               <h3
-                className={`text-2xl font-black tracking-tight ${summary?.netIncomes < 0 ? "text-red-500" : "text-green-600"}`}
+                className={`text-2xl font-black tracking-tight ${
+                  isProfit ? "text-emerald-600" : "text-rose-600"
+                }`}
               >
                 {formatIDR(summary?.netIncomes)}
               </h3>
             </div>
-            <span className="text-xs text-gray-400 font-medium">
-              {summary?.breakEvenRevenue?.excessRevenueAmount < 0 ? (
-                <>
-                  Sisa target ke profit:{" "}
-                  <span className="text-red-500 font-bold">
-                    {formatIDR(
-                      Math.floor(
-                        summary?.breakEvenRevenue?.excessRevenueAmount,
-                      ),
-                    )}{" "}
-                    lagi
-                  </span>
-                </>
-              ) : (
-                <p className="text-xs text-green-600 font-bold bg-[#0F766E]/5 px-2.5 py-1 rounded-lg w-fit">
-                  Profitable:{" "}
+
+            {summary?.breakEvenRevenue?.excessRevenueAmount < 0 ? (
+              <div className="pt-3 border-t border-slate-100/80 flex items-center justify-between text-xs mt-3">
+                <span className="text-slate-400">Target Profit:</span>
+                <span
+                  className={`inline-flex items-center gap-1 font-semibold px-2 py-0.5 rounded-full text-[12px] ${
+                    isProfit
+                      ? "bg-emerald-50 text-emerald-700"
+                      : "bg-rose-50 text-rose-700"
+                  }`}
+                >
+                  Butuh {" "}
+                  {formatIDR(
+                    Math.abs(Math.floor(summary?.breakEvenRevenue?.excessRevenueAmount))
+                  )}{" "}
+                  lagi
+                </span>
+              </div>
+            ) : (
+              <div className="pt-3 border-t border-slate-100/80 flex items-center justify-between text-xs mt-3">
+                <span className="text-slate-400">Laba Bersih:</span>
+                <span
+                  className={`inline-flex items-center gap-1 font-semibold px-2 py-0.5 rounded-full text-[12px] ${
+                    isProfit
+                      ? "bg-emerald-50 text-emerald-700"
+                      : "bg-rose-50 text-rose-700"
+                  }`}
+                >
                   {Math.floor(
                     summary?.breakEvenRevenue?.excessRevenuePercentage,
                   )}
                   %
-                </p>
-              )}
+                </span>
+              </div>
+            )}
+          </div>
+
+          <div className="group relative bg-white border border-slate-200/80 hover:border-teal-500/30 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between h-40">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                  Total Pesanan
+                </span>
+                <div className="w-8 h-8 rounded-xl bg-teal-50 text-[#0F766E] flex items-center justify-center font-bold">
+                  <ShoppingBag className="w-4 h-4" />
+                </div>
+              </div>
+
+              <h3 className="text-3xl font-black text-slate-800 tracking-tight">
+                {summary?.transactions || 0}
+                <span className="text-sm font-normal text-slate-400 ml-1.5">
+                  transaksi
+                </span>
+              </h3>
+            </div>
+
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+              <span className="text-slate-400 font-medium">
+                Status Transaksi
+              </span>
+              <span className="text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full text-[10px]">
+                Terproses
+              </span>
+            </div>
+          </div>
+
+          <div className="group bg-white border border-slate-200/80 hover:border-teal-500/30 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between h-40">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                  Penjualan Item
+                </span>
+                <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
+                  <Coffee className="w-4 h-4" />
+                </div>
+              </div>
+
+              <div className="flex items-baseline gap-1">
+                <h3 className="text-3xl font-black text-slate-800 tracking-tight">
+                  {itemSold}
+                </h3>
+                <span className="text-sm font-semibold text-slate-400">
+                  / {targetItem} item
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-1.5 pt-2">
+              <div className="flex justify-between items-center text-[11px]">
+                <span className="text-slate-400 font-medium">
+                  Pencapaian Target
+                </span>
+                <span className="font-bold text-[#0F766E]">
+                  {itemProgress}%
+                </span>
+              </div>
+              <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                <div
+                  className="bg-[#0F766E] h-full rounded-full transition-all duration-500"
+                  style={{ width: `${itemProgress}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white border border-slate-200/80 hover:border-slate-300 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between h-40">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+              Metode Pembayaran
             </span>
-          </div>
 
-          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
-            <div>
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-                Total Pesanan
-              </span>
-              <h3 className="text-2xl font-black text-[#0F766E] tracking-tight">
-                {summary?.transactions}
-              </h3>
-            </div>
-            <p className="text-xs text-gray-400 font-medium">
-              {/* Rata-rata Harian: <span className="text-gray-700 font-semibold">{formatIDR(summary?.transactionMetrics.avgRevPerDay)}</span> */}
-            </p>
-          </div>
+            <div className="grid grid-cols-2 gap-2 mt-1">
+              <div className="bg-emerald-50/60 border border-emerald-100 rounded-xl p-2.5 flex flex-col justify-between">
+                <div className="flex items-center gap-1.5 text-emerald-700 text-[10px] font-bold uppercase">
+                  <Banknote className="w-3.5 h-3.5" />
+                  <span>Tunai (Cash)</span>
+                </div>
+                <p className="text-sm font-black text-emerald-800 tracking-tight mt-1">
+                  {formatIDR(summary?.paymentMethods?.amounts?.cash)}
+                </p>
+              </div>
 
-          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
-            <div>
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-                Item Terjual/Target Item
-              </span>
-              <h3 className="text-2xl font-black text-gray-800 tracking-tight">
-                {summary?.totalItemsSold}/
-                {Math.ceil(summary?.breakEvenRevenue?.targetItemsCount)}
-              </h3>
-            </div>
-
-            {/* <div>
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-                Cemilan terjual/Target Cemilan
-              </span>
-              <h3 className="text-2xl font-black text-gray-800 tracking-tight">
-                {summary?.snacks}/
-                {Math.ceil(summary?.breakEvenRevenue?.targetSnackCount)}
-              </h3>
-            </div> */}
-          </div>
-
-          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
-            <div>
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-                Cash
-              </span>
-              <h3 className="text-2xl font-black text-[#0F766E] tracking-tight">
-                {formatIDR(summary?.paymentMethods?.amounts?.cash)}
-              </h3>
-            </div>
-
-            <div>
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-                QRIS
-              </span>
-              <h3 className="text-2xl font-black text-[#0F766E] tracking-tight">
-                {formatIDR(summary?.paymentMethods?.amounts?.qris)}
-              </h3>
+              <div className="bg-sky-50/60 border border-sky-100 rounded-xl p-2.5 flex flex-col justify-between">
+                <div className="flex items-center gap-1.5 text-sky-700 text-[10px] font-bold uppercase">
+                  <QrCode className="w-3.5 h-3.5" />
+                  <span>QRIS</span>
+                </div>
+                <p className="text-sm font-black text-sky-800 tracking-tight mt-1">
+                  {formatIDR(summary?.paymentMethods?.amounts?.qris)}
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -519,83 +641,133 @@ export default function DashboardPage() {
       {user?.role === "EMPLOYEE" && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* CARD 1: REVENUE */}
-          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
+          <div className="group relative bg-white border border-slate-200/80 hover:border-[#0F766E]/40 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between overflow-hidden">
+            <div className="absolute -top-10 -right-10 w-28 h-28 bg-[#0F766E]/5 rounded-full blur-2xl group-hover:bg-[#0F766E]/10 transition-colors" />
+
             <div>
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-                Total Pendapatan
-              </span>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                  Total Pendapatan
+                </span>
+                <div className="w-8 h-8 rounded-xl bg-teal-50 text-[#0F766E] flex items-center justify-center font-bold">
+                  <TrendingUp className="w-4 h-4" />
+                </div>
+              </div>
+
               <h3 className="text-2xl font-black text-[#0F766E] tracking-tight">
                 {formatIDR(summary?.revenues)}
               </h3>
             </div>
-            <p className="text-xs text-gray-400 font-medium">
-              Rata-rata Harian:{" "}
-              <span className="text-gray-700 font-semibold">
-                {formatIDR(summary?.transactionMetrics.avgRevPerDay)}
-              </span>
-            </p>
-            <p className="text-xs text-gray-400 font-medium">
-              Target:{" "}
-              <span className="text-gray-700 font-semibold">
-                {formatIDR(summary?.breakEvenRevenue.targetAmount)}
-              </span>
-            </p>
-            {/* Target Amount: {formatIDR(summary?.breakEvenRevenue.targetAmount)} */}
-          </div>
 
-          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
-            <div>
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-                Orders
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs mt-3">
+              <span className="text-slate-400">
+                Rata-rata:{" "}
+                <strong className="text-slate-700 font-semibold">
+                  {formatIDR(summary?.transactionMetrics.avgRevPerDay)}
+                </strong>
               </span>
-              <h3 className="text-2xl font-black text-[#0F766E] tracking-tight">
-                {summary?.transactions}
-              </h3>
-            </div>
-            <p className="text-xs text-gray-400 font-medium">
-              {/* Rata-rata Harian: <span className="text-gray-700 font-semibold">{formatIDR(summary?.transactionMetrics.avgRevPerDay)}</span> */}
-            </p>
-          </div>
-
-          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
-            <div>
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-                Cups/Target Cups
+              <span className="text-slate-400">
+                Target:{" "}
+                <strong className="text-slate-700 font-semibold">
+                  {formatIDR(summary?.breakEvenRevenue.targetAmount)}
+                </strong>
               </span>
-              <h3 className="text-2xl font-black text-gray-800 tracking-tight">
-                {summary?.cups.total}/
-                {Math.ceil(summary?.breakEvenRevenue?.targetCupsCount)}
-              </h3>
-            </div>
-
-            <div>
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-                Snacks/Target Snacks
-              </span>
-              <h3 className="text-2xl font-black text-gray-800 tracking-tight">
-                {summary?.snacks}/
-                {Math.ceil(summary?.breakEvenRevenue?.targetSnackCount)}
-              </h3>
             </div>
           </div>
 
-          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden">
+          <div className="group relative bg-white border border-slate-200/80 hover:border-teal-500/30 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between h-40">
             <div>
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-                Cash
-              </span>
-              <h3 className="text-2xl font-black text-gray-800 tracking-tight">
-                {formatIDR(summary?.paymentMethods?.amounts?.cash)}
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                  Total Pesanan
+                </span>
+                <div className="w-8 h-8 rounded-xl bg-teal-50 text-[#0F766E] flex items-center justify-center font-bold">
+                  <ShoppingBag className="w-4 h-4" />
+                </div>
+              </div>
+
+              <h3 className="text-3xl font-black text-slate-800 tracking-tight">
+                {summary?.transactions || 0}
+                <span className="text-sm font-normal text-slate-400 ml-1.5">
+                  transaksi
+                </span>
               </h3>
             </div>
 
-            <div>
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-                QRIS
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+              <span className="text-slate-400 font-medium">
+                Status Transaksi
               </span>
-              <h3 className="text-2xl font-black text-gray-800 tracking-tight">
-                {formatIDR(summary?.paymentMethods?.amounts?.qris)}
-              </h3>
+              <span className="text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full text-[10px]">
+                Terproses
+              </span>
+            </div>
+          </div>
+
+          <div className="group bg-white border border-slate-200/80 hover:border-teal-500/30 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between h-40">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                  Penjualan Item
+                </span>
+                <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
+                  <Coffee className="w-4 h-4" />
+                </div>
+              </div>
+
+              <div className="flex items-baseline gap-1">
+                <h3 className="text-3xl font-black text-slate-800 tracking-tight">
+                  {itemSold}
+                </h3>
+                <span className="text-sm font-semibold text-slate-400">
+                  / {targetItem} item
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-1.5 pt-2">
+              <div className="flex justify-between items-center text-[11px]">
+                <span className="text-slate-400 font-medium">
+                  Pencapaian Target
+                </span>
+                <span className="font-bold text-[#0F766E]">
+                  {itemProgress}%
+                </span>
+              </div>
+              <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                <div
+                  className="bg-[#0F766E] h-full rounded-full transition-all duration-500"
+                  style={{ width: `${itemProgress}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white border border-slate-200/80 hover:border-slate-300 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between h-40">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+              Metode Pembayaran
+            </span>
+
+            <div className="grid grid-cols-2 gap-2 mt-1">
+              <div className="bg-emerald-50/60 border border-emerald-100 rounded-xl p-2.5 flex flex-col justify-between">
+                <div className="flex items-center gap-1.5 text-emerald-700 text-[10px] font-bold uppercase">
+                  <Banknote className="w-3.5 h-3.5" />
+                  <span>Cash</span>
+                </div>
+                <p className="text-sm font-black text-emerald-800 tracking-tight mt-1">
+                  {formatIDR(summary?.paymentMethods?.amounts?.cash)}
+                </p>
+              </div>
+
+              <div className="bg-sky-50/60 border border-sky-100 rounded-xl p-2.5 flex flex-col justify-between">
+                <div className="flex items-center gap-1.5 text-sky-700 text-[10px] font-bold uppercase">
+                  <QrCode className="w-3.5 h-3.5" />
+                  <span>QRIS</span>
+                </div>
+                <p className="text-sm font-black text-sky-800 tracking-tight mt-1">
+                  {formatIDR(summary?.paymentMethods?.amounts?.qris)}
+                </p>
+              </div>
             </div>
           </div>
         </div>
