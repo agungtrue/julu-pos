@@ -39,7 +39,7 @@ interface Transaction {
   finalAmount: number;
   status: string;
   metadata: {
-    items: [];
+    items: TransactionItem[];
   };
   user: User;
   total: number;
@@ -610,7 +610,25 @@ export default function SalesLogPage() {
               <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mb-1">
                 Rincian Belanja:
               </span>
-              {selectedTx.items.map((item, idx) => (
+              {selectedTx?.items?.length === 0 && selectedTx?.metadata?.items?.map((item, idx) => (
+                <div
+                  key={idx}
+                  className="flex justify-between items-start text-xs font-medium"
+                >
+                  <div className="space-y-0.5 pr-4">
+                    <h5 className="font-bold text-gray-700">
+                      {item?.name}
+                    </h5>
+                    <span className="text-gray-400 font-mono">
+                      {item.qty} x {formatIDR(item.price)}
+                    </span>
+                  </div>
+                  <span className="font-mono font-bold text-gray-800 mt-0.5">
+                    {formatIDR(item.qty * item.price)}
+                  </span>
+                </div>
+              ))}
+              {selectedTx?.items.map((item, idx) => (
                 <div
                   key={idx}
                   className="flex justify-between items-start text-xs font-medium"

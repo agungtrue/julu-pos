@@ -13,7 +13,12 @@ import {
 } from "@/components/ProductSalesSummarySection";
 import { useAuthStore } from "@/stores/authStore";
 import { LowStockModal } from "@/components/LowStockModal";
-import { getPeriodLabel, formatDateYMD, formatIndo, getTodayWIB } from "@/lib/utils";
+import {
+  getPeriodLabel,
+  formatDateYMD,
+  formatIndo,
+  getTodayWIB,
+} from "@/lib/utils";
 import ScrollToTop from "@/components/ScrollToTop";
 import Link from "next/link";
 import { Calendar } from "lucide-react";
@@ -38,7 +43,7 @@ export default function DashboardPage() {
     "today" | "month" | "yesterday" | "last_month" | "custom"
   >("today");
 
-  const todayStr = getTodayWIB()
+  const todayStr = getTodayWIB();
 
   const [appliedFilter, setAppliedFilter] = useState({
     startDate: todayStr,
@@ -704,7 +709,7 @@ export default function DashboardPage() {
             hover:[&::-webkit-scrollbar-thumb]:bg-gray-300"
           >
             {/* @ts-ignore */}
-            {summary?.bestSellers.map((item, index) => (
+            {summary?.bestSellers?.map((item, index) => (
               <div key={item.name} className="space-y-1.5">
                 <div className="flex justify-between items-center text-xs md:text-sm">
                   <div className="flex items-center gap-3">
@@ -733,6 +738,11 @@ export default function DashboardPage() {
                 </div>
               </div>
             ))}
+            {summary?.bestSellers?.length === 0 && (
+              <div className="text-center py-6 text-xs text-gray-400 font-medium">
+                Tidak ada transaksi hari ini.
+              </div>
+            )}
           </div>
         </div>
       </div>
