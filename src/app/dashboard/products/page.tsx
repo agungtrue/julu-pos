@@ -106,14 +106,36 @@ export default function ProductsPage() {
 
   const products = productData ?? [];
 
+  // Logika Pemfilteran Data Produk Dinamis
+  const filteredProducts = products?.filter((p: Product) => {
+    const matchesSearch = p.name
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    const matchesCategory =
+      selectedCategory === "all" || p.type === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
+
   const calculateMargin = (price: number, hpp: number) => {
-    const profit = price - hpp;
-    return ((profit / price) * 100).toFixed(1);
+    const safePrice = Number(price) || 0;
+    const safeCogs = Number(hpp) || 0;
+
+    if (safePrice <= 0) return 0;
+
+    const margin = ((safePrice - safeCogs) / safePrice) * 100;
+    return isNaN(margin) ? 0 : margin.toFixed(1);
   };
 
   const calculateCogs = (product: Product) => {
+    if (
+      !product?.productIngredients ||
+      !Array.isArray(product.productIngredients)
+    ) {
+      return 0;
+    }
+
     const cogs = product?.productIngredients?.reduce(
-      (acc, item: ProductItem) => acc + item.sub_total_cost,
+      (acc, item: ProductItem) => acc + (Number(item?.sub_total_cost) || 0),
       0,
     );
 
@@ -127,16 +149,6 @@ export default function ProductsPage() {
       minimumFractionDigits: 0,
     }).format(num);
   };
-
-  // Logika Pemfilteran Data Produk Dinamis
-  const filteredProducts = products?.filter((p: Product) => {
-    const matchesSearch = p.name
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase());
-    const matchesCategory =
-      selectedCategory === "all" || p.type === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
 
   interface SaveNewProduct {
     name: string;
@@ -279,7 +291,9 @@ export default function ProductsPage() {
             return (
               <button
                 key={cat}
-                onClick={() => setSelectedCategory(cat as keyof typeof CATEGORY_MAP)}
+                onClick={() =>
+                  setSelectedCategory(cat as keyof typeof CATEGORY_MAP)
+                }
                 className={`
             flex items-center gap-2 px-3.5 py-2 text-xs font-bold uppercase rounded-xl border whitespace-nowrap transition-all flex-shrink-0
             ${

@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { getAuthToken, removeAuthCookie } from '@/app/actions/auth';
 import { useAuthStore } from '@/stores/authStore';
+import { toast } from "sonner";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.julucoffee.com';
 
@@ -42,13 +43,15 @@ api.interceptors.response.use(
     }
 
     // require payment
-    if (status === 402 || status === 403 || data?.errorCode?.startsWith('SUBSCRIPTION_')) {
+    else if (status === 402 || status === 403 || data?.errorCode?.startsWith('SUBSCRIPTION_')) {
     //   console.log({ status, data })
 
       if (typeof window !== 'undefined' && window.location.pathname !== '/billing') {
         window.location.href = data?.redirectTo || '/billing';
         return;
       }
+    } else {
+      toast.error(error.response?.data?.message || 'Hmm, something went wrong');
     }
     return Promise.reject(error);
   }
