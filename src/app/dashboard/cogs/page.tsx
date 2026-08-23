@@ -377,6 +377,65 @@ export default function HppSystemPage() {
     return matchesSearch;
   });
 
+  // State untuk kalkulator Batch / Prestock
+  const [isBatchMode, setIsBatchMode] = useState(false);
+  const [batchItems, setBatchItems] = useState<
+    Array<{ id: string; quantity: number }>
+  >([]);
+  const [selectedBatchId, setSelectedBatchId] = useState<string>("");
+
+  // Helper: Tambah baris bahan batch
+  const handleAddBatchItem = () => {
+    setBatchItems([...batchItems, { id: "", quantity: 0 }]);
+  };
+
+  // Helper: Hapus baris bahan batch
+  const handleRemoveBatchItem = (index: number) => {
+    setBatchItems(batchItems.filter((_, i) => i !== index));
+  };
+
+  // Helper: Update item batch
+  const handleUpdateBatchItem = (
+    index: number,
+    field: "id" | "quantity",
+    value: any,
+  ) => {
+    const updated = [...batchItems];
+    updated[index] = { ...updated[index], [field]: value };
+    setBatchItems(updated);
+  };
+
+  // Kalkulasi Total HPP Batch secara Real-time
+  const totalBatchCost = batchItems.reduce((acc, item) => {
+    const selectedMat = ingredientsData?.find((m: Ingredient) => m.id === item.id);
+    if (!selectedMat || !selectedMat.conversion_factor) return acc;
+    const costPerUnit =
+      selectedMat.purchase_cost / selectedMat.conversion_factor;
+    return acc + costPerUnit * (Number(item.quantity) || 0);
+  }, 0);
+
+  // Terapkan hasil kalkulasi ke input "Harga Beli"
+  const handleApplyBatchCost = () => {
+    setNewRecipe({
+      ...newRecipe,
+      purchase_cost: Math.round(totalBatchCost),
+    });
+  };
+
+  // Handler Tambah Bahan ke List
+  const handleAddSelectedBatchItem = () => {
+    if (!selectedBatchId) return;
+    setBatchItems([...batchItems, { id: selectedBatchId, quantity: 0 }]);
+    setSelectedBatchId(""); // Reset select setelah ditambahkan
+  };
+
+  const handleApplyBatchCostToEdit = () => {
+    setEditIngredient({
+      ...editIngredient,
+      purchase_cost: Math.round(totalBatchCost),
+    });
+  };
+
   if (isLoadingProducts || isLoadingIngredients) return <DashboardSkeleton />;
 
   return (
@@ -937,49 +996,230 @@ export default function HppSystemPage() {
 
           <form
             onSubmit={handleSaveNewRecipe}
-            className="bg-white w-full max-w-xl rounded-t-[2.5rem] md:rounded-[2rem] p-6 md:p-8 shadow-2xl flex flex-col max-h-[90vh] border border-gray-100"
+            className="bg-white w-full max-w-xl rounded-t-[2.5rem] md:rounded-[2rem] p-6 md:p-8 shadow-2xl flex flex-col max-h-[90vh] overflow-y-auto border border-gray-100"
           >
             {/* Header Modal */}
-            <div className="flex justify-between items-start border-b border-gray-100 pb-4 mb-5">
+            <div className="flex justify-between items-start pb-4 border-b border-gray-100">
               <div>
                 <span className="text-[10px] bg-[#0F766E]/10 text-[#0F766E] font-black tracking-widest uppercase px-2.5 py-1 rounded-md">
-                  Bahan Baku Baru
+                  Perhitungan Biaya Bahan Baku
                 </span>
-                <h3 className="font-black text-gray-800 text-lg tracking-tight mt-2">
-                  Bahan Baku
+                <h3 className="font-black text-gray-800 text-lg tracking-tight mt-1.5">
+                  Tambah Bahan Baku
                 </h3>
               </div>
               <button
                 type="button"
                 disabled={isSaving}
                 onClick={() => setIsAddBahanBakuModalOpen(false)}
-                className="text-gray-400 font-mono text-lg"
+                className="w-8 h-8 rounded-full bg-gray-50 hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors font-mono text-sm"
               >
                 ✕
               </button>
             </div>
 
-            {/* Input Nama Menu & Harga Jual Kasir */}
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1.5">
+            {/* Toggle Batch / Prestock Mode */}
+            <div className="my-4 bg-slate-50 border border-slate-200/80 rounded-2xl p-3.5 flex items-center justify-between transition-all hover:border-[#0F766E]/30">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-[#0F766E]/10 text-[#0F766E] flex items-center justify-center text-xs font-black">
+                  🧮
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-gray-800">
+                    Kalkulator Prestock / Batch
+                  </p>
+                  <p className="text-[10px] text-gray-400">
+                    Hitung HPP otomatis dari racikan beberapa bahan baku
+                  </p>
+                </div>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isBatchMode}
+                  onChange={(e) => setIsBatchMode(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0F766E]"></div>
+              </label>
+            </div>
+
+            {/* Section Calculator (Hanya muncul jika Batch Mode ON) */}
+            {isBatchMode && (
+              <div className="bg-[#0F766E]/[0.03] border border-dashed border-[#0F766E]/30 rounded-2xl p-4 mb-4 space-y-3 animate-in slide-in-from-top-2 duration-200">
+                {/* Header & Main Single Select Picker */}
+                <div className="space-y-2 pb-3 border-b border-dashed border-[#0F766E]/20">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#0F766E] animate-pulse"></span>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-[#0F766E]">
+                      Formulasi Batch
+                    </span>
+                  </div>
+
+                  <div className="flex gap-2 items-center">
+                    {/* Select Utama dengan Filtering Auto-Exclude */}
+                    <select
+                      value={selectedBatchId}
+                      onChange={(e) => setSelectedBatchId(e.target.value)}
+                      className="flex-1 bg-white border border-gray-200/80 rounded-xl py-2 px-3 text-xs font-semibold text-gray-800 focus:outline-none focus:border-[#0F766E] shadow-sm"
+                    >
+                      <option value="">-- Pilih Bahan Baku --</option>
+                      {ingredientsData
+                        ?.filter(
+                          (mat: Ingredient) => !batchItems.some((b) => b.id === mat.id),
+                        )
+                        .map((mat: Ingredient) => (
+                          <option key={mat.id} value={mat.id}>
+                            {mat.name} (Rp{" "}
+                            {mat.purchase_cost?.toLocaleString("id-ID")}) -{" "}
+                            {mat.unit}
+                          </option>
+                        ))}
+                    </select>
+
+                    <button
+                      type="button"
+                      disabled={!selectedBatchId}
+                      onClick={handleAddSelectedBatchItem}
+                      className="bg-[#0F766E] disabled:bg-gray-200 disabled:text-gray-400 text-white text-[10px] font-black px-3.5 py-2.5 rounded-xl uppercase tracking-wider shadow-sm hover:bg-[#0F766E]/90 transition-all flex items-center gap-1 whitespace-nowrap active:scale-95"
+                    >
+                      <span>+</span> Tambah
+                    </button>
+                  </div>
+                </div>
+
+                {/* List Item Racikan (Murni Teks + Input Qty) */}
+                <div className="space-y-2 max-h-44 overflow-y-auto pr-1 custom-scrollbar">
+                  {batchItems?.length === 0 ? (
+                    <p className="text-center text-[10px] text-gray-400 py-3 italic">
+                      Belum ada bahan baku yang dimasukkan ke racikan batch.
+                    </p>
+                  ) : (
+                    batchItems.map((item, idx) => {
+                      const selectedMat = ingredientsData?.find(
+                        (m: Ingredient) => m.id === item.id,
+                      );
+                      const itemCost =
+                        selectedMat && selectedMat.conversion_factor
+                          ? (selectedMat.purchase_cost /
+                              selectedMat.conversion_factor) *
+                            (item.quantity || 0)
+                          : 0;
+
+                      return (
+                        <div
+                          key={item.id}
+                          className="flex gap-2 items-center bg-white p-2.5 rounded-xl border border-gray-100 shadow-sm transition-all hover:border-gray-200"
+                        >
+                          {/* Tampilan Nama & Detail Bahan (Text Only) */}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold text-gray-800 truncate">
+                              {selectedMat?.name || "Bahan Baku"}
+                            </p>
+                            <p className="text-[9px] text-gray-400 font-medium">
+                              Rp{" "}
+                              {selectedMat?.purchase_cost?.toLocaleString(
+                                "id-ID",
+                              ) || 0}{" "}
+                              / {selectedMat?.unit || "-"}
+                            </p>
+                          </div>
+
+                          {/* Input Qty */}
+                          <div className="relative w-24">
+                            <input
+                              type="number"
+                              placeholder="Qty"
+                              value={item.quantity === 0 ? "" : item.quantity}
+                              onChange={(e) =>
+                                handleUpdateBatchItem(
+                                  idx,
+                                  "quantity",
+                                  Number(e.target.value),
+                                )
+                              }
+                              className="w-full bg-gray-50 border border-gray-200/80 rounded-lg py-1.5 px-2 text-xs font-mono font-bold text-gray-800 focus:outline-none focus:border-[#0F766E] focus:bg-white text-right pr-7"
+                            />
+                            <span className="absolute right-2 top-1.5 text-[9px] text-gray-400 font-semibold pointer-events-none">
+                              {selectedMat?.unit || ""}
+                            </span>
+                          </div>
+
+                          {/* Kalkulasi HPP per item */}
+                          <span className="text-[11px] font-mono font-bold text-gray-700 w-20 text-right">
+                            Rp {Math.round(itemCost).toLocaleString("id-ID")}
+                          </span>
+
+                          {/* Delete Button */}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveBatchItem(idx)}
+                            className="w-6 h-6 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 flex items-center justify-center transition-colors text-xs"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+
+                {/* Dotted Separation */}
+                <div className="border-b border-dashed border-[#0F766E]/20 pt-1" />
+
+                {/* Result & Apply Action */}
+                <div className="flex items-center justify-between pt-1">
+                  <div>
+                    <span className="block text-[9px] font-black text-gray-400 uppercase tracking-wider">
+                      Estimasi HPP Batch
+                    </span>
+                    <span className="text-base font-mono font-black text-[#0F766E]">
+                      Rp {Math.round(totalBatchCost).toLocaleString("id-ID")}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleApplyBatchCost}
+                    className="bg-[#0F766E] hover:bg-[#0F766E]/90 text-white text-[10px] font-black px-3.5 py-2 rounded-xl uppercase tracking-wider shadow-sm transition-all flex items-center gap-1.5 active:scale-95"
+                  >
+                    <span>↙</span> Gunakan ke Harga Beli
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Garis Pembatas Utama */}
+            <div className="border-b border-dashed border-gray-200 mb-5" />
+
+            {/* Input Form Utama */}
+            <div className="grid grid-cols-2 gap-3.5 mb-6">
+              <div className="col-span-2 md:col-span-1">
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
                   Nama Bahan Baku
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="Ex: Milk, Beans"
+                  placeholder="Ex: Biang Teh 5L, Milk"
                   value={newRecipe.name}
                   onChange={(e) =>
                     setNewRecipe({ ...newRecipe, name: e.target.value })
                   }
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#0F766E] font-semibold text-gray-800"
+                  className="w-full bg-gray-50/70 border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#0F766E] focus:bg-white font-semibold text-gray-800 transition-all"
                 />
               </div>
-              <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1.5">
-                  Harga Beli (Rp)
-                </label>
+
+              <div className="col-span-2 md:col-span-1">
+                <div className="flex justify-between items-center mb-1">
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                    Harga Beli (Rp)
+                  </label>
+                  {isBatchMode && newRecipe.purchase_cost > 0 && (
+                    <span className="text-[9px] font-bold text-[#0F766E] bg-[#0F766E]/10 px-1.5 py-0.5 rounded">
+                      Auto-calculated
+                    </span>
+                  )}
+                </div>
                 <input
                   type="number"
                   required
@@ -993,17 +1233,18 @@ export default function HppSystemPage() {
                       purchase_cost: Number(e.target.value),
                     })
                   }
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#0F766E] font-mono font-bold text-gray-800"
+                  className="w-full bg-gray-50/70 border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#0F766E] focus:bg-white font-mono font-bold text-gray-800 transition-all"
                 />
               </div>
+
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1.5">
-                  Conversion Factor (gr/ml/pcs)
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                  Conversion Factor
                 </label>
                 <input
                   type="number"
                   required
-                  placeholder="Ex: 1000/500/1200"
+                  placeholder="Ex: 5000 (Isi Bersih)"
                   value={
                     newRecipe.conversion_factor === 0
                       ? ""
@@ -1015,35 +1256,37 @@ export default function HppSystemPage() {
                       conversion_factor: Number(e.target.value),
                     })
                   }
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#0F766E] font-mono font-bold text-gray-800"
+                  className="w-full bg-gray-50/70 border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#0F766E] focus:bg-white font-mono font-bold text-gray-800 transition-all"
                 />
               </div>
+
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1.5">
-                  Unit
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                  Satuan (Unit)
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="Ex: GRAM/ML/PCS"
+                  placeholder="Ex: ML / GRAM / PCS"
                   value={newRecipe.unit}
                   onChange={(e) =>
                     setNewRecipe({
                       ...newRecipe,
-                      unit: e.target.value,
+                      unit: e.target.value.toUpperCase(),
                     })
                   }
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#0F766E] font-mono font-bold text-gray-800"
+                  className="w-full bg-gray-50/70 border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#0F766E] focus:bg-white font-mono font-bold text-gray-800 transition-all uppercase"
                 />
               </div>
+
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1.5">
-                  Stock
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                  Stok Awal
                 </label>
                 <input
                   type="number"
                   required
-                  placeholder="Ex: GRAM/ML/PCS"
+                  placeholder="Ex: 5000"
                   value={newRecipe.stock}
                   onChange={(e) =>
                     setNewRecipe({
@@ -1051,17 +1294,18 @@ export default function HppSystemPage() {
                       stock: Number(e.target.value),
                     })
                   }
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#0F766E] font-mono font-bold text-gray-800"
+                  className="w-full bg-gray-50/70 border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#0F766E] focus:bg-white font-mono font-bold text-gray-800 transition-all"
                 />
               </div>
+
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1.5">
-                  Minimum Stock
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                  Minimum Stok
                 </label>
                 <input
                   type="number"
                   required
-                  placeholder="Ex: GRAM/ML/PCS"
+                  placeholder="Ex: 1000"
                   value={newRecipe.minimumStock}
                   onChange={(e) =>
                     setNewRecipe({
@@ -1069,29 +1313,29 @@ export default function HppSystemPage() {
                       minimumStock: Number(e.target.value),
                     })
                   }
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#0F766E] font-mono font-bold text-gray-800"
+                  className="w-full bg-gray-50/70 border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#0F766E] focus:bg-white font-mono font-bold text-gray-800 transition-all"
                 />
               </div>
             </div>
 
             {/* Action Buttons */}
-            <div className="grid grid-cols-3 gap-3 pt-4 border-t border-gray-100">
+            <div className="grid grid-cols-3 gap-3 pt-4 border-t border-gray-100 mt-auto">
               <button
                 type="button"
                 onClick={() => setIsAddBahanBakuModalOpen(false)}
-                className="col-span-1 border border-gray-200 text-gray-500 font-bold py-3 rounded-xl text-xs uppercase tracking-wider"
+                className="col-span-1 border border-gray-200 text-gray-500 hover:bg-gray-50 font-bold py-3 rounded-xl text-xs uppercase tracking-wider transition-colors"
               >
                 Batal
               </button>
               <button
                 type="submit"
                 disabled={isSaving}
-                className="col-span-2 bg-[#EF5B2B] text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wider shadow-lg shadow-[#EF5B2B]/10 hover:bg-opacity-95 flex items-center justify-center gap-2"
+                className="col-span-2 bg-[#EF5B2B] hover:bg-[#EF5B2B]/90 active:scale-[0.99] text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wider shadow-lg shadow-[#EF5B2B]/20 transition-all flex items-center justify-center gap-2"
               >
                 {isSaving ? (
                   <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
                 ) : (
-                  "Submit"
+                  "Simpan Bahan Baku"
                 )}
               </button>
             </div>
@@ -1111,29 +1355,30 @@ export default function HppSystemPage() {
 
           <form
             onSubmit={handleEditIngredients}
-            className="bg-white w-full max-w-xl rounded-t-[2.5rem] md:rounded-[2rem] p-6 md:p-8 shadow-2xl flex flex-col max-h-[90vh] border border-gray-100"
+            className="bg-white w-full max-w-xl rounded-t-[2.5rem] md:rounded-[2rem] p-6 md:p-8 shadow-2xl flex flex-col max-h-[90vh] overflow-y-auto border border-gray-100"
           >
             {/* Header Modal */}
-            <div className="flex justify-between items-start border-b border-gray-100 pb-4 mb-5">
+            <div className="flex justify-between items-start border-b border-gray-100 pb-4 mb-4">
               <div>
                 <span className="text-[10px] bg-[#0F766E]/10 text-[#0F766E] font-black tracking-widest uppercase px-2.5 py-1 rounded-md">
-                  Edit Baku Baru
+                  Edit Bahan Baku
                 </span>
-                {/* <h3 className="font-black text-gray-800 text-lg tracking-tight mt-2">
-                  Bahan Baku
-                </h3> */}
+                <h3 className="font-black text-gray-800 text-lg tracking-tight mt-1.5">
+                  {editIngredient.name || "Bahan Baku"}
+                </h3>
               </div>
               <button
                 type="button"
                 disabled={isSaving}
                 onClick={() => setIsEditBahanBakuModalOpen(false)}
-                className="text-gray-400 font-mono text-lg"
+                className="text-gray-400 font-mono text-lg hover:text-gray-600"
               >
                 ✕
               </button>
             </div>
 
-            <div className="p-3.5 bg-teal-50/80 border border-teal-200/80 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
+            {/* Alert Mutasi Stok */}
+            <div className="p-3.5 bg-teal-50/80 border border-teal-200/80 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm mb-4">
               <div className="space-y-0.5">
                 <div className="flex items-center gap-1.5 text-xs font-extrabold text-[#0F766E]">
                   <PackageCheck className="w-4 h-4 shrink-0" />
@@ -1147,7 +1392,6 @@ export default function HppSystemPage() {
                 </p>
               </div>
 
-              {/* Tombol Redirect */}
               <button
                 type="button"
                 onClick={() => {
@@ -1160,7 +1404,8 @@ export default function HppSystemPage() {
               </button>
             </div>
 
-            <div className="p-3.5 bg-gray-50 rounded-2xl border border-gray-100 flex justify-between items-center">
+            {/* Info Stok saat ini */}
+            <div className="p-3 bg-gray-50 rounded-2xl border border-gray-100 flex justify-between items-center mb-4">
               <span className="text-xs font-semibold text-gray-500">
                 Stok Saat Ini:
               </span>
@@ -1169,7 +1414,174 @@ export default function HppSystemPage() {
               </span>
             </div>
 
-            {/* Input Nama Menu & Harga Jual Kasir */}
+            {/* Toggle Batch / Prestock Mode */}
+            <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3.5 mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-[#0F766E]/10 text-[#0F766E] flex items-center justify-center text-xs font-black">
+                  🧮
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-gray-800">
+                    Kalkulator Prestock / Batch?
+                  </p>
+                  <p className="text-[10px] text-gray-400">
+                    Hitung HPP otomatis dari racikan bahan lain
+                  </p>
+                </div>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isBatchMode}
+                  onChange={(e) => setIsBatchMode(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0F766E]"></div>
+              </label>
+            </div>
+
+            {/* Section Calculator (Hanya muncul jika Batch Mode ON) */}
+            {isBatchMode && (
+              <div className="bg-[#0F766E]/[0.03] border border-dashed border-[#0F766E]/30 rounded-2xl p-4 mb-4 space-y-3 animate-in slide-in-from-top-2 duration-200">
+                {/* Main Single Select Picker */}
+                <div className="space-y-2 pb-3 border-b border-dashed border-[#0F766E]/20">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#0F766E] animate-pulse"></span>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-[#0F766E]">
+                      Formulasi Batch
+                    </span>
+                  </div>
+
+                  <div className="flex gap-2 items-center">
+                    {/* Select Utama: Auto Exclude bahan yang sedang di-edit & yang sudah di-add */}
+                    <select
+                      value={selectedBatchId}
+                      onChange={(e) => setSelectedBatchId(e.target.value)}
+                      className="flex-1 bg-white border border-gray-200/80 rounded-xl py-2 px-3 text-xs font-semibold text-gray-800 focus:outline-none focus:border-[#0F766E] shadow-sm"
+                    >
+                      <option value="">-- Pilih Bahan Baku --</option>
+                      {ingredientsData
+                        ?.filter(
+                          (mat: Ingredient) =>
+                            mat.id !== editIngredient.id && // Exclude bahan yang sedang di-edit
+                            !batchItems.some((b) => b.id === mat.id), // Exclude yang sudah masuk list
+                        )
+                        .map((mat: Ingredient) => (
+                          <option key={mat.id} value={mat.id}>
+                            {mat.name} (Rp{" "}
+                            {mat.purchase_cost?.toLocaleString("id-ID")}/
+                            {mat.unit})
+                          </option>
+                        ))}
+                    </select>
+
+                    <button
+                      type="button"
+                      disabled={!selectedBatchId}
+                      onClick={handleAddSelectedBatchItem}
+                      className="bg-[#0F766E] disabled:bg-gray-200 disabled:text-gray-400 text-white text-[10px] font-black px-3.5 py-2.5 rounded-xl uppercase tracking-wider shadow-sm hover:bg-[#0F766E]/90 transition-all flex items-center gap-1 whitespace-nowrap active:scale-95"
+                    >
+                      <span>+</span> Tambah
+                    </button>
+                  </div>
+                </div>
+
+                {/* List Item Racikan */}
+                <div className="space-y-2 max-h-44 overflow-y-auto pr-1 custom-scrollbar">
+                  {batchItems.length === 0 ? (
+                    <p className="text-center text-[10px] text-gray-400 py-3 italic">
+                      Belum ada bahan baku yang dimasukkan ke racikan batch.
+                    </p>
+                  ) : (
+                    batchItems.map((item, idx) => {
+                      const selectedMat = ingredientsData?.find(
+                        (m: Ingredient) => m.id === item.id,
+                      );
+                      const itemCost =
+                        selectedMat && selectedMat.conversion_factor
+                          ? (selectedMat.purchase_cost /
+                              selectedMat.conversion_factor) *
+                            (item.quantity || 0)
+                          : 0;
+
+                      return (
+                        <div
+                          key={item.id}
+                          className="flex gap-2 items-center bg-white p-2.5 rounded-xl border border-gray-100 shadow-sm"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold text-gray-800 truncate">
+                              {selectedMat?.name || "Bahan Baku"}
+                            </p>
+                            <p className="text-[9px] text-gray-400 font-medium">
+                              Rp{" "}
+                              {selectedMat?.purchase_cost?.toLocaleString(
+                                "id-ID",
+                              ) || 0}{" "}
+                              / {selectedMat?.unit || "-"}
+                            </p>
+                          </div>
+
+                          <div className="relative w-24">
+                            <input
+                              type="number"
+                              placeholder="Qty"
+                              value={item.quantity === 0 ? "" : item.quantity}
+                              onChange={(e) =>
+                                handleUpdateBatchItem(
+                                  idx,
+                                  "quantity",
+                                  Number(e.target.value),
+                                )
+                              }
+                              className="w-full bg-gray-50 border border-gray-200/80 rounded-lg py-1.5 px-2 text-xs font-mono font-bold text-gray-800 focus:outline-none focus:border-[#0F766E] focus:bg-white text-right pr-7"
+                            />
+                            <span className="absolute right-2 top-1.5 text-[9px] text-gray-400 font-semibold pointer-events-none">
+                              {selectedMat?.unit || ""}
+                            </span>
+                          </div>
+
+                          <span className="text-[11px] font-mono font-bold text-gray-700 w-20 text-right">
+                            Rp {Math.round(itemCost).toLocaleString("id-ID")}
+                          </span>
+
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveBatchItem(idx)}
+                            className="w-6 h-6 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 flex items-center justify-center transition-colors text-xs"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+
+                <div className="border-b border-dashed border-[#0F766E]/20 pt-1" />
+
+                {/* Result & Apply Action (Target ke editIngredient) */}
+                <div className="flex items-center justify-between pt-1">
+                  <div>
+                    <span className="block text-[9px] font-black text-gray-400 uppercase tracking-wider">
+                      Estimasi HPP Batch
+                    </span>
+                    <span className="text-base font-mono font-black text-[#0F766E]">
+                      Rp {Math.round(totalBatchCost).toLocaleString("id-ID")}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleApplyBatchCostToEdit}
+                    className="bg-[#0F766E] hover:bg-[#0F766E]/90 text-white text-[10px] font-black px-3.5 py-2 rounded-xl uppercase tracking-wider shadow-sm transition-all flex items-center gap-1.5 active:scale-95"
+                  >
+                    <span>↙</span> Gunakan ke Harga Beli
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Input Form Utama */}
             <div className="grid grid-cols-2 gap-3 mb-4">
               <div>
                 <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1.5">
@@ -1189,10 +1601,18 @@ export default function HppSystemPage() {
                   className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#0F766E] font-semibold text-gray-800"
                 />
               </div>
+
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1.5">
-                  Harga Beli (Rp)
-                </label>
+                <div className="flex justify-between items-center mb-1.5">
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase">
+                    Harga Beli (Rp)
+                  </label>
+                  {isBatchMode && editIngredient.purchase_cost > 0 && (
+                    <span className="text-[9px] font-bold text-[#0F766E] bg-[#0F766E]/10 px-1.5 py-0.5 rounded">
+                      Auto-calculated
+                    </span>
+                  )}
+                </div>
                 <input
                   type="number"
                   required
@@ -1211,6 +1631,7 @@ export default function HppSystemPage() {
                   className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#0F766E] font-mono font-bold text-gray-800"
                 />
               </div>
+
               <div>
                 <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1.5">
                   Conversion Factor (gr/ml/pcs)
@@ -1233,6 +1654,7 @@ export default function HppSystemPage() {
                   className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#0F766E] font-mono font-bold text-gray-800"
                 />
               </div>
+
               <div>
                 <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1.5">
                   Unit
@@ -1251,25 +1673,7 @@ export default function HppSystemPage() {
                   className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#0F766E] font-mono font-bold text-gray-800"
                 />
               </div>
-              {/* <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1.5">
-                  Tambah Stock
-                </label>
-                <input
-                  type="number"
-                  required
-                  placeholder="Ex: 5000"
-                  value={addedStock}
-                  onChange={(e) => {
-                    // setEditIngredient({
-                    //   ...editIngredient,
-                    //   stock: Number(e.target.value),
-                    // })
-                    setAddedStock(Number(e.target.value))
-                  }}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#0F766E] font-mono font-bold text-gray-800"
-                />
-              </div> */}
+
               <div>
                 <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1.5">
                   Minimum Stock
@@ -1291,7 +1695,7 @@ export default function HppSystemPage() {
             </div>
 
             {/* Action Buttons */}
-            <div className="grid grid-cols-3 gap-3 pt-4 border-t border-gray-100">
+            <div className="grid grid-cols-3 gap-3 pt-4 border-t border-gray-100 mt-auto">
               <button
                 type="button"
                 onClick={() => setIsEditBahanBakuModalOpen(false)}
@@ -1307,7 +1711,7 @@ export default function HppSystemPage() {
                 {isSaving ? (
                   <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
                 ) : (
-                  "Submit"
+                  "Simpan Perubahan"
                 )}
               </button>
             </div>

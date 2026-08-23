@@ -9,7 +9,6 @@ import DashboardSkeleton from "@/components/DashboardSkeleton";
 import { UserPerformanceSection } from "@/components/UserPerformanceSection";
 import {
   ProductSalesSummarySection,
-  ProductType,
 } from "@/components/ProductSalesSummarySection";
 import { useAuthStore } from "@/stores/authStore";
 import { LowStockModal } from "@/components/LowStockModal";
@@ -29,6 +28,7 @@ import {
   Coffee,
   Banknote,
   QrCode,
+  DollarSignIcon,
 } from "lucide-react";
 
 export default function DashboardPage() {
@@ -490,7 +490,7 @@ export default function DashboardPage() {
                       : "bg-rose-100 text-rose-600"
                   }`}
                 >
-                  <Wallet className="w-4 h-4" />
+                  <DollarSignIcon className="w-4 h-4" />
                 </div>
               </div>
 
