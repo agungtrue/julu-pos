@@ -427,7 +427,7 @@ export default function StockMutationPage() {
                   <td className="p-4">{renderBadge(log.type)}</td>
 
                   <td className="p-4 text-right font-extrabold font-mono text-sm">
-                    {["CANCEL", "RESTOCK_IN"].includes(log.type) ? (
+                    {["CANCEL", "RESTOCK_IN", "ADJUSTMENT"].includes(log.type) ? (
                       <span className="text-emerald-600">
                         +{formatStockValue(log.quantity)} {log.ingredient?.unit}
                       </span>

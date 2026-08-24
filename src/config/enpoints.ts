@@ -29,6 +29,7 @@ export const endpoints = {
     restock: `${BASE_URL}/ingredients/mutations/restock`,
     loss: `${BASE_URL}/ingredients/mutations/loss`,
     summary: `${BASE_URL}/ingredients/mutations/summary`,
+    reset: `${BASE_URL}/ingredients/mutations/reset-stock`,
   },
   dashboard: {
     summary: `${BASE_URL}/dashboard/summary`,
