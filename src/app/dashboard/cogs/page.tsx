@@ -16,6 +16,7 @@ import {
   Search,
   PackageCheck,
   ArrowUpRight,
+  RotateCcw,
 } from "lucide-react";
 
 interface Ingredient {
@@ -407,7 +408,9 @@ export default function HppSystemPage() {
 
   // Kalkulasi Total HPP Batch secara Real-time
   const totalBatchCost = batchItems.reduce((acc, item) => {
-    const selectedMat = ingredientsData?.find((m: Ingredient) => m.id === item.id);
+    const selectedMat = ingredientsData?.find(
+      (m: Ingredient) => m.id === item.id,
+    );
     if (!selectedMat || !selectedMat.conversion_factor) return acc;
     const costPerUnit =
       selectedMat.purchase_cost / selectedMat.conversion_factor;
@@ -436,6 +439,51 @@ export default function HppSystemPage() {
     });
   };
 
+  // State Modal Reset Stok
+  const [isResetStockModalOpen, setIsResetStockModalOpen] = useState(false);
+  const [resetSearchQuery, setResetSearchQuery] = useState("");
+  const [selectedResetIds, setSelectedResetIds] = useState<string[]>([]);
+  const [isResetting, setIsResetting] = useState(false);
+
+  // Handler Pilih & Hapus
+  const handleSelectForReset = (id: string) => {
+    if (!selectedResetIds.includes(id)) {
+      setSelectedResetIds([...selectedResetIds, id]);
+    }
+  };
+
+  const handleRemoveFromReset = (id: string) => {
+    setSelectedResetIds(selectedResetIds.filter((itemId) => itemId !== id));
+  };
+
+  const handleSelectAllFiltered = (filteredItems: any[]) => {
+    const newIds = filteredItems.map((item) => item.id);
+    const combined = Array.from(new Set([...selectedResetIds, ...newIds]));
+    setSelectedResetIds(combined);
+  };
+
+  const { mutate: handleConfirmReset } = useMutation({
+    mutationFn: async () => {
+      if (selectedResetIds.length === 0) return;
+      setIsResetting(true);
+
+      return await api.post(endpoints.ingredientMutation.reset, {
+        ids: selectedResetIds,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ingredientsData"] });
+      queryClient.invalidateQueries({ queryKey: ["productData", "cogs"] });
+      queryClient.invalidateQueries({ queryKey: ["ingreMutation"] });
+      queryClient.invalidateQueries({ queryKey: ["mutationSummaryData"] });
+
+      setSelectedResetIds([]);
+      setResetSearchQuery("");
+      setIsResetStockModalOpen(false);
+      setIsResetting(false);
+    },
+  });
+
   if (isLoadingProducts || isLoadingIngredients) return <DashboardSkeleton />;
 
   return (
@@ -454,28 +502,49 @@ export default function HppSystemPage() {
         </div>
       </div>
 
-      <div className="flex bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm w-full max-w-md font-medium">
+      <div className="flex items-center gap-1.5 bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/60 w-full sm:w-auto min-w-[340px] max-w-lg font-medium shadow-inner">
         <button
+          type="button"
           onClick={() => setActiveTab("ingredients")}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs uppercase tracking-wider font-bold whitespace-nowrap transition-all ${
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs uppercase tracking-wider font-extrabold whitespace-nowrap transition-all duration-200 active:scale-[0.98] ${
             activeTab === "ingredients"
-              ? "bg-[#0F766E] text-white shadow-sm"
-              : "text-gray-500 hover:text-gray-700"
+              ? "bg-[#0F766E] text-white shadow-md shadow-[#0F766E]/20"
+              : "text-slate-500 hover:text-slate-800 hover:bg-white/60"
           }`}
         >
-          <Package className="w-4 h-4 stroke-[2.5]" />
-          <span>Bahan Baku ({ingredients.length})</span>
+          <Package className="w-4 h-4 stroke-[2.2]" />
+          <span>Bahan Baku</span>
+          <span
+            className={`text-[10px] font-mono font-black px-2 py-0.5 rounded-full transition-colors ${
+              activeTab === "ingredients"
+                ? "bg-white/20 text-white"
+                : "bg-slate-200/80 text-slate-600"
+            }`}
+          >
+            {ingredients.length}
+          </span>
         </button>
+
         <button
+          type="button"
           onClick={() => setActiveTab("recipes")}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 text-center rounded-xl text-xs uppercase tracking-wider font-bold transition-all ${
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs uppercase tracking-wider font-extrabold whitespace-nowrap transition-all duration-200 active:scale-[0.98] ${
             activeTab === "recipes"
-              ? "bg-[#0F766E] text-white shadow-sm"
-              : "text-gray-500 hover:text-gray-700"
+              ? "bg-[#0F766E] text-white shadow-md shadow-[#0F766E]/20"
+              : "text-slate-500 hover:text-slate-800 hover:bg-white/60"
           }`}
         >
-          <CalculatorIcon className="w-4 h-4 stroke-[2.5]" />
-          <span>Formula Resep ({recipes.length})</span>
+          <CalculatorIcon className="w-4 h-4 stroke-[2.2]" />
+          <span>Formula Resep</span>
+          <span
+            className={`text-[10px] font-mono font-black px-2 py-0.5 rounded-full transition-colors ${
+              activeTab === "recipes"
+                ? "bg-white/20 text-white"
+                : "bg-slate-200/80 text-slate-600"
+            }`}
+          >
+            {recipes.length}
+          </span>
         </button>
       </div>
 
@@ -496,13 +565,32 @@ export default function HppSystemPage() {
               />
             </div>
           </div>
-          <button
+          <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => setIsResetStockModalOpen(true)}
+              className="flex items-center justify-center gap-1.5 text-xs font-bold text-red-600 bg-red-50/80 hover:bg-red-100 border border-red-200/60 px-3.5 py-2 rounded-xl active:scale-95 transition-all shadow-sm"
+            >
+              <RotateCcw className="w-3.5 h-3.5 stroke-[2.5]" />
+              <span>Reset Stok</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleOpenAddBahanBakuModalOpen}
+              className="flex items-center justify-center gap-1.5 text-xs font-bold text-white bg-[#EF5B2B] hover:bg-[#EF5B2B]/90 px-3.5 py-2 rounded-xl active:scale-95 transition-all shadow-md shadow-[#EF5B2B]/20"
+            >
+              <Plus className="w-4 h-4 stroke-[2.5]" />
+              <span>Bahan Baku Baru</span>
+            </button>
+          </div>
+          {/* <button
             onClick={handleOpenAddBahanBakuModalOpen}
             className="lex-1 flex gap-2 text-xs font-black text-[#EF5B2B] bg-[#EF5B2B]/5 px-3 py-1.5 rounded-xl hover:bg-[#EF5B2B]/10 transition-colors"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
             Bahan Baku Baru
-          </button>
+          </button> */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {filteredIngredients?.map((ing: Ingredient) => {
               // 1. Logic Indikator Stok Menipis
@@ -1066,13 +1154,14 @@ export default function HppSystemPage() {
                       <option value="">-- Pilih Bahan Baku --</option>
                       {ingredientsData
                         ?.filter(
-                          (mat: Ingredient) => !batchItems.some((b) => b.id === mat.id),
+                          (mat: Ingredient) =>
+                            !batchItems.some((b) => b.id === mat.id),
                         )
                         .map((mat: Ingredient) => (
                           <option key={mat.id} value={mat.id}>
                             {mat.name} (Rp{" "}
-                            {mat.purchase_cost?.toLocaleString("id-ID")}) -{" "}
-                            {mat.unit}
+                            {mat.purchase_cost?.toLocaleString("id-ID")} {" - "}
+                            {mat.unit})
                           </option>
                         ))}
                     </select>
@@ -1120,8 +1209,7 @@ export default function HppSystemPage() {
                               Rp{" "}
                               {selectedMat?.purchase_cost?.toLocaleString(
                                 "id-ID",
-                              ) || 0}{" "}
-                              / {selectedMat?.unit || "-"}
+                              ) || 0}
                             </p>
                           </div>
 
@@ -1469,7 +1557,7 @@ export default function HppSystemPage() {
                         .map((mat: Ingredient) => (
                           <option key={mat.id} value={mat.id}>
                             {mat.name} (Rp{" "}
-                            {mat.purchase_cost?.toLocaleString("id-ID")}/
+                            {mat.purchase_cost?.toLocaleString("id-ID")} {" - "}
                             {mat.unit})
                           </option>
                         ))}
@@ -1517,8 +1605,7 @@ export default function HppSystemPage() {
                               Rp{" "}
                               {selectedMat?.purchase_cost?.toLocaleString(
                                 "id-ID",
-                              ) || 0}{" "}
-                              / {selectedMat?.unit || "-"}
+                              ) || 0}
                             </p>
                           </div>
 
@@ -1716,6 +1803,211 @@ export default function HppSystemPage() {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {isResetStockModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center z-50 p-0 md:p-4 animate-in fade-in duration-200">
+          <div
+            className="absolute inset-0 -z-10"
+            onClick={() => {
+              if (!isResetting) setIsResetStockModalOpen(false);
+            }}
+          />
+
+          <div className="bg-white w-full max-w-xl rounded-t-[2.5rem] md:rounded-[2rem] p-6 md:p-8 shadow-2xl flex flex-col max-h-[90vh] overflow-y-auto border border-gray-100">
+            <div className="flex justify-between items-start pb-4 border-b border-gray-100">
+              <div>
+                <span className="text-[10px] bg-red-50 text-red-600 font-black tracking-widest uppercase px-2.5 py-1 rounded-md border border-red-100">
+                  Stock Adjustment
+                </span>
+                <h3 className="font-black text-gray-800 text-lg tracking-tight mt-1.5">
+                  Reset Stok Bahan Baku
+                </h3>
+              </div>
+              <button
+                type="button"
+                disabled={isResetting}
+                onClick={() => setIsResetStockModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-gray-50 hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors font-mono text-sm"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="my-4 p-3.5 bg-amber-50 border border-amber-200/80 rounded-2xl flex items-start gap-3">
+              <span className="text-base">⚠️</span>
+              <div className="space-y-0.5">
+                <p className="text-xs font-extrabold text-amber-900">
+                  Perhatian Tindakan Reset
+                </p>
+                <p className="text-[11px] text-amber-700 font-medium leading-relaxed">
+                  Stok bahan baku yang dipilih akan langsung diubah menjadi
+                  (0). Pastikan data sudah sesuai ya.
+                </p>
+              </div>
+            </div>
+
+            <div className="relative mb-3">
+              <input
+                type="text"
+                placeholder="Cari nama bahan baku untuk di-reset..."
+                value={resetSearchQuery}
+                onChange={(e) => setResetSearchQuery(e.target.value)}
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 pl-9 pr-4 text-xs font-semibold text-gray-800 focus:outline-none focus:border-[#0F766E] focus:bg-white transition-all"
+              />
+              <span className="absolute left-3 top-2.5 text-gray-400 text-xs">
+                🔍
+              </span>
+            </div>
+
+            {resetSearchQuery.trim() !== "" && (
+              <div className="mb-4 bg-slate-50 border border-slate-200 rounded-xl p-2 max-h-36 overflow-y-auto space-y-1 custom-scrollbar">
+                {(() => {
+                  const filtered = (ingredientsData || []).filter(
+                    (mat: Ingredient) =>
+                      mat.name
+                        .toLowerCase()
+                        .includes(resetSearchQuery.toLowerCase()) &&
+                      !selectedResetIds.includes(mat.id),
+                  );
+
+                  if (filtered.length === 0) {
+                    return (
+                      <p className="text-center text-[10px] text-gray-400 py-2 italic">
+                        Tidak ada bahan baku yang cocok / sudah masuk daftar.
+                      </p>
+                    );
+                  }
+
+                  return (
+                    <>
+                      <div className="flex justify-between items-center px-2 py-1 border-b border-slate-200/60 mb-1">
+                        <span className="text-[9px] font-bold text-gray-400 uppercase">
+                          Hasil Pencarian ({filtered.length})
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleSelectAllFiltered(filtered)}
+                          className="text-[9px] font-bold text-[#0F766E] hover:underline"
+                        >
+                          + Pilih Semua Hasil
+                        </button>
+                      </div>
+                      {filtered.map((mat: Ingredient) => (
+                        <div
+                          key={mat.id}
+                          onClick={() => handleSelectForReset(mat.id)}
+                          className="flex justify-between items-center p-2 rounded-lg bg-white border border-gray-100 hover:border-[#0F766E]/40 cursor-pointer transition-all active:scale-[0.99]"
+                        >
+                          <div>
+                            <p className="text-xs font-bold text-gray-800">
+                              {mat.name}
+                            </p>
+                            <p className="text-[9px] text-gray-400">
+                              Stok saat ini: {mat.stock} {mat.unit}
+                            </p>
+                          </div>
+                          <span className="text-[10px] font-bold text-[#0F766E] bg-[#0F766E]/10 px-2 py-1 rounded-md">
+                            + Tambah
+                          </span>
+                        </div>
+                      ))}
+                    </>
+                  );
+                })()}
+              </div>
+            )}
+
+            {/* Dotted Divider */}
+            <div className="border-b border-dashed border-gray-200 mb-3" />
+
+            {/* Selected Items List Container */}
+            <div className="space-y-2 mb-6">
+              <div className="flex justify-between items-center">
+                <span className="text-[10px] font-black uppercase tracking-wider text-gray-400">
+                  Bahan Baku Terpilih ({selectedResetIds.length})
+                </span>
+                {selectedResetIds.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedResetIds([])}
+                    className="text-[10px] font-bold text-red-500 hover:underline"
+                  >
+                    Kosongkan Daftar
+                  </button>
+                )}
+              </div>
+
+              <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
+                {selectedResetIds.length === 0 ? (
+                  <div className="bg-gray-50 border border-dashed border-gray-200 rounded-2xl p-6 text-center">
+                    <p className="text-xs font-bold text-gray-400">
+                      Belum ada bahan dipilih
+                    </p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">
+                      Cari dan klik bahan baku di atas untuk dimasukkan ke
+                      daftar reset.
+                    </p>
+                  </div>
+                ) : (
+                  selectedResetIds.map((id) => {
+                    const mat = (ingredientsData || []).find(
+                      (m: Ingredient) => m.id === id,
+                    );
+                    return (
+                      <div
+                        key={id}
+                        className="flex justify-between items-center bg-red-50/50 border border-red-100 p-2.5 rounded-xl transition-all"
+                      >
+                        <div>
+                          <p className="text-xs font-bold text-gray-800">
+                            {mat?.name || "Bahan Baku"}
+                          </p>
+                          <p className="text-[9px] text-red-500 font-semibold">
+                            Akan di-reset dari {mat?.stock} {mat?.unit} ➔ 0{" "}
+                            {mat?.unit}
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveFromReset(id)}
+                          className="w-6 h-6 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-100/80 flex items-center justify-center transition-colors text-xs"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="grid grid-cols-3 gap-3 pt-4 border-t border-gray-100 mt-auto">
+              <button
+                type="button"
+                disabled={isResetting}
+                onClick={() => setIsResetStockModalOpen(false)}
+                className="col-span-1 border border-gray-200 text-gray-500 hover:bg-gray-50 font-bold py-3 rounded-xl text-xs uppercase tracking-wider transition-colors"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                disabled={isResetting || selectedResetIds.length === 0}
+                onClick={() => handleConfirmReset()}
+                className="col-span-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-200 disabled:text-gray-400 active:scale-[0.99] text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wider shadow-lg shadow-red-600/20 transition-all flex items-center justify-center gap-2"
+              >
+                {isResetting ? (
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                ) : (
+                  `Konfirmasi Reset (${selectedResetIds.length} Bahan)`
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
       <ScrollToTop />
