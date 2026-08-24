@@ -4,7 +4,7 @@ pipelines:
   branches:
     main:
       - step:
-          name: Build and Push Admin Web (AMD64)
+          name: Build and Push Admin Web
           services:
             - docker
           script:
