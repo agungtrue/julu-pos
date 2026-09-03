@@ -30,6 +30,7 @@ import {
   QrCode,
   DollarSignIcon,
 } from "lucide-react";
+import { Toaster } from "sonner";
 
 export default function DashboardPage() {
   type TimeFilterType =
@@ -864,7 +865,7 @@ export default function DashboardPage() {
         />
 
         {user?.role === "OWNER_ADMIN" && (
-          <UserPerformanceSection performances={summary.performances} />
+          <UserPerformanceSection performances={summary?.performances} />
         )}
 
         <div className="lg:col-span-1 bg-white border border-gray-100 p-6 rounded-3xl shadow-sm">
@@ -1050,6 +1051,7 @@ export default function DashboardPage() {
         stockAlerts={summary?.stockAlerts || []}
       />
       <ScrollToTop />
+      <Toaster />
     </div>
   );
 }
