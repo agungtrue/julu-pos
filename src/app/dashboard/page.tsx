@@ -200,14 +200,12 @@ export default function DashboardPage() {
   };
 
   const { data: trendData } = useQuery({
-    queryKey: [
-      "orderTrendData",
-    ],
+    queryKey: ["orderTrendData"],
     queryFn: () => fetchTrendData(),
     enabled: user?.role !== "SUPER_ADMIN",
   });
 
-  const orderTrendData = trendData || []
+  const orderTrendData = trendData || [];
 
   // console.log({ orderTrendData })
 
@@ -811,9 +809,73 @@ export default function DashboardPage() {
         </div>
       )}
 
+      
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <ProductSalesSummarySection
+          categorySales={summary?.categorySales}
+          averageBasketSize={summary?.transactionMetrics?.avgTransactionValue}
+          txPerDay={summary?.transactionMetrics?.avgTransactionsPerDay}
+        />
+
+        {user?.role === "OWNER_ADMIN" && (
+          <UserPerformanceSection performances={summary?.performances} />
+        )}
+
+        <div className="lg:col-span-1 bg-white border border-gray-100 p-6 rounded-3xl shadow-sm">
+          <h4 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-6 border-l-4 border-[#EF5B2B] pl-3">
+            Menu Paling Laris (Best Seller)
+          </h4>
+
+          <div
+            className="h-65 overflow-y-auto pr-2 space-y-4
+            [&::-webkit-scrollbar]:w-1.5
+            [&::-webkit-scrollbar-track]:bg-transparent
+            [&::-webkit-scrollbar-thumb]:bg-gray-200
+            [&::-webkit-scrollbar-thumb]:rounded-full
+            hover:[&::-webkit-scrollbar-thumb]:bg-gray-300"
+          >
+            {/* @ts-ignore */}
+            {summary?.bestSellers?.map((item, index) => (
+              <div key={item.name} className="space-y-1.5">
+                <div className="flex justify-between items-center text-xs md:text-sm">
+                  <div className="flex items-center gap-3">
+                    <span className="w-5 h-5 rounded-md bg-gray-100 text-gray-500 font-bold text-xs flex items-center justify-center font-mono">
+                      {index + 1}
+                    </span>
+                    <span className="font-semibold text-gray-700">
+                      {item.name}
+                    </span>
+                  </div>
+                  <span className="font-bold text-gray-800 font-mono">
+                    {item.count} Porsi ({Math.ceil(item.percentage)}%)
+                  </span>
+                </div>
+                <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${
+                      index === 0
+                        ? "bg-[#0F766E]"
+                        : index === 1
+                          ? "bg-[#EF5B2B]"
+                          : "bg-amber-500"
+                    }`}
+                    style={{ width: `${(item.count / 75) * 100}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+            {summary?.bestSellers?.length === 0 && (
+              <div className="text-center py-6 text-xs text-gray-400 font-medium">
+                Tidak ada transaksi hari ini.
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       {user?.role === "OWNER_ADMIN" && (
         <>
-          <RevenueTrendChart data={orderTrendData} />
           <div
             onClick={() => {
               if (summary?.stockAlerts?.length > 0) {
@@ -894,71 +956,9 @@ export default function DashboardPage() {
               </span>
             )}
           </div>
+          <RevenueTrendChart data={orderTrendData} />
         </>
       )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <ProductSalesSummarySection
-          categorySales={summary?.categorySales}
-          averageBasketSize={summary?.transactionMetrics?.avgTransactionValue}
-          txPerDay={summary?.transactionMetrics?.avgTransactionsPerDay}
-        />
-
-        {user?.role === "OWNER_ADMIN" && (
-          <UserPerformanceSection performances={summary?.performances} />
-        )}
-
-        <div className="lg:col-span-1 bg-white border border-gray-100 p-6 rounded-3xl shadow-sm">
-          <h4 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-6 border-l-4 border-[#EF5B2B] pl-3">
-            Menu Paling Laris (Best Seller)
-          </h4>
-
-          <div
-            className="h-65 overflow-y-auto pr-2 space-y-4
-            [&::-webkit-scrollbar]:w-1.5
-            [&::-webkit-scrollbar-track]:bg-transparent
-            [&::-webkit-scrollbar-thumb]:bg-gray-200
-            [&::-webkit-scrollbar-thumb]:rounded-full
-            hover:[&::-webkit-scrollbar-thumb]:bg-gray-300"
-          >
-            {/* @ts-ignore */}
-            {summary?.bestSellers?.map((item, index) => (
-              <div key={item.name} className="space-y-1.5">
-                <div className="flex justify-between items-center text-xs md:text-sm">
-                  <div className="flex items-center gap-3">
-                    <span className="w-5 h-5 rounded-md bg-gray-100 text-gray-500 font-bold text-xs flex items-center justify-center font-mono">
-                      {index + 1}
-                    </span>
-                    <span className="font-semibold text-gray-700">
-                      {item.name}
-                    </span>
-                  </div>
-                  <span className="font-bold text-gray-800 font-mono">
-                    {item.count} Porsi ({Math.ceil(item.percentage)}%)
-                  </span>
-                </div>
-                <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all duration-500 ${
-                      index === 0
-                        ? "bg-[#0F766E]"
-                        : index === 1
-                          ? "bg-[#EF5B2B]"
-                          : "bg-amber-500"
-                    }`}
-                    style={{ width: `${(item.count / 75) * 100}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-            {summary?.bestSellers?.length === 0 && (
-              <div className="text-center py-6 text-xs text-gray-400 font-medium">
-                Tidak ada transaksi hari ini.
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
 
       {showCustomPicker && (
         <div
