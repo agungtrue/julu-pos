@@ -14,8 +14,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Admin Portal | Julu POS",
-  description: "Julu POS Admin Web App",
+  title: "Julu POS - Aplikasi Kasir UMKM",
+  description: "Aplikasi kasir buat warung, coffee shop & UMKM. Catat penjualan, stok, modal bahan, biaya operasional & laba bersih harian otomatis. Coba gratis, sudah dipakai Julu Coffee & tenant aktif.",
+  keywords: ["aplikasi kasir umkm", "pos umkm", "kasir warung", "laporan laba rugi umkm", "aplikasi stok barang", "kasir coffee shop", "julu pos"],
+  openGraph: {
+    title: "Julu POS - Kasir UMKM Anti Ribet",
+    description: "Dari Rp 1.680.000 omzet, langsung tau laba bersih Rp 712.562. 66 transaksi tercatat otomatis.",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
