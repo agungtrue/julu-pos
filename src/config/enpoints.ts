@@ -33,6 +33,7 @@ export const endpoints = {
   },
   dashboard: {
     summary: `${BASE_URL}/dashboard/summary`,
+    trends: `${BASE_URL}/dashboard/trends`,
   },
   orders: {
     summary: {
