@@ -7,9 +7,7 @@ import api from "../../lib/api";
 import { endpoints } from "../../config/enpoints";
 import DashboardSkeleton from "@/components/DashboardSkeleton";
 import { UserPerformanceSection } from "@/components/UserPerformanceSection";
-import {
-  ProductSalesSummarySection,
-} from "@/components/ProductSalesSummarySection";
+import { ProductSalesSummarySection } from "@/components/ProductSalesSummarySection";
 import { useAuthStore } from "@/stores/authStore";
 import { LowStockModal } from "@/components/LowStockModal";
 import {
@@ -31,6 +29,7 @@ import {
   DollarSignIcon,
 } from "lucide-react";
 import { Toaster } from "sonner";
+import RevenueTrendChart from "@/components/RevenueTrendChart";
 
 export default function DashboardPage() {
   type TimeFilterType =
@@ -74,6 +73,18 @@ export default function DashboardPage() {
     return {
       startDate: `${year}-${month}-01`,
       endDate: `${year}-${month}-${day}`,
+    };
+  };
+
+  const getDateParamsForLast7Days = () => {
+    const today = new Date();
+
+    const sevenDaysAgo = new Date(today);
+    sevenDaysAgo.setDate(today.getDate() - 6);
+
+    return {
+      startDate: formatDateYMD(sevenDaysAgo),
+      endDate: formatDateYMD(today),
     };
   };
 
@@ -177,6 +188,28 @@ export default function DashboardPage() {
   });
 
   const [isLowStockModalOpen, setIsLowStockModalOpen] = useState(false);
+
+  const fetchTrendData = async () => {
+    let url = endpoints.dashboard.trends;
+
+    const { startDate, endDate } = getDateParamsForLast7Days();
+    url = `${url}?startDate=${startDate}&endDate=${endDate}`;
+
+    const response = await api.get(url);
+    return response?.data?.data?.[0];
+  };
+
+  const { data: trendData } = useQuery({
+    queryKey: [
+      "orderTrendData",
+    ],
+    queryFn: () => fetchTrendData(),
+    enabled: user?.role !== "SUPER_ADMIN",
+  });
+
+  const orderTrendData = trendData || []
+
+  // console.log({ orderTrendData })
 
   useEffect(() => {
     if (user?.role === "SUPER_ADMIN") {
@@ -514,9 +547,13 @@ export default function DashboardPage() {
                       : "bg-rose-50 text-rose-700"
                   }`}
                 >
-                  Butuh {" "}
+                  Butuh{" "}
                   {formatIDR(
-                    Math.abs(Math.floor(summary?.breakEvenRevenue?.excessRevenueAmount))
+                    Math.abs(
+                      Math.floor(
+                        summary?.breakEvenRevenue?.excessRevenueAmount,
+                      ),
+                    ),
                   )}{" "}
                   lagi
                 </span>
@@ -775,86 +812,89 @@ export default function DashboardPage() {
       )}
 
       {user?.role === "OWNER_ADMIN" && (
-        <div
-          onClick={() => {
-            if (summary?.stockAlerts?.length > 0) {
-              setIsLowStockModalOpen(true);
-            }
-          }}
-          className={`bg-white border rounded-2xl p-5 shadow-sm transition-all flex items-center justify-between group ${
-            summary?.stockAlerts?.length > 0
-              ? "border-amber-200 bg-amber-50/20 hover:border-amber-300 cursor-pointer"
-              : "border-gray-100"
-          }`}
-        >
-          <div className="flex items-center gap-4">
-            {/* Icon Container */}
-            <div
-              className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 ${
-                summary?.stockAlerts?.length > 0
-                  ? "bg-amber-500 text-white shadow-md shadow-amber-500/20"
-                  : "bg-[#0A8F8A]/10 text-[#0A8F8A]"
-              }`}
-            >
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+        <>
+          <RevenueTrendChart data={orderTrendData} />
+          <div
+            onClick={() => {
+              if (summary?.stockAlerts?.length > 0) {
+                setIsLowStockModalOpen(true);
+              }
+            }}
+            className={`bg-white border rounded-2xl p-5 shadow-sm transition-all flex items-center justify-between group ${
+              summary?.stockAlerts?.length > 0
+                ? "border-amber-200 bg-amber-50/20 hover:border-amber-300 cursor-pointer"
+                : "border-gray-100"
+            }`}
+          >
+            <div className="flex items-center gap-4">
+              {/* Icon Container */}
+              <div
+                className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 ${
+                  summary?.stockAlerts?.length > 0
+                    ? "bg-amber-500 text-white shadow-md shadow-amber-500/20"
+                    : "bg-[#0A8F8A]/10 text-[#0A8F8A]"
+                }`}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-                />
-              </svg>
-            </div>
-
-            <div>
-              <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-0.5">
-                Stok Kritis
-              </span>
-              <div className="flex items-baseline gap-2">
-                <span
-                  className={`text-2xl font-extrabold tracking-tight ${
-                    summary?.stockAlerts?.length > 0
-                      ? "text-amber-600"
-                      : "text-gray-900"
-                  }`}
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
-                  {summary?.stockAlerts?.length || 0}
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                  />
+                </svg>
+              </div>
+
+              <div>
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-0.5">
+                  Stok Kritis
                 </span>
-                <span className="text-xs font-semibold text-gray-500">
-                  Bahan
-                </span>
+                <div className="flex items-baseline gap-2">
+                  <span
+                    className={`text-2xl font-extrabold tracking-tight ${
+                      summary?.stockAlerts?.length > 0
+                        ? "text-amber-600"
+                        : "text-gray-900"
+                    }`}
+                  >
+                    {summary?.stockAlerts?.length || 0}
+                  </span>
+                  <span className="text-xs font-semibold text-gray-500">
+                    Bahan
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
 
-          {summary?.stockAlerts?.length > 0 ? (
-            <div className="flex items-center gap-1 text-xs font-bold text-amber-600 bg-amber-100/60 px-3 py-1.5 rounded-xl group-hover:bg-amber-600 group-hover:text-white transition-all">
-              <span>Lihat Detail</span>
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-            </div>
-          ) : (
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#0A8F8A] bg-[#0A8F8A]/10 px-2.5 py-1 rounded-full">
-              Aman
-            </span>
-          )}
-        </div>
+            {summary?.stockAlerts?.length > 0 ? (
+              <div className="flex items-center gap-1 text-xs font-bold text-amber-600 bg-amber-100/60 px-3 py-1.5 rounded-xl group-hover:bg-amber-600 group-hover:text-white transition-all">
+                <span>Lihat Detail</span>
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </div>
+            ) : (
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#0A8F8A] bg-[#0A8F8A]/10 px-2.5 py-1 rounded-full">
+                Aman
+              </span>
+            )}
+          </div>
+        </>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

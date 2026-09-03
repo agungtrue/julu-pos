@@ -263,6 +263,7 @@ export default function SalesLogPage() {
 
       queryClient.invalidateQueries({ queryKey: ["orderListData"] });
       queryClient.invalidateQueries({ queryKey: ["orderSummaryData"] });
+      queryClient.invalidateQueries({ queryKey: ["orderTrendData"] });
       playSuccessSound();
 
       setIsConfirming(false);
