@@ -1,5 +1,12 @@
-import React from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import React from "react";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  Legend,
+} from "recharts";
 
 export interface DonutChartDataItem {
   name: string;
@@ -17,8 +24,8 @@ interface DonutChartCardProps {
 export const DonutChartCard: React.FC<DonutChartCardProps> = ({
   title,
   data,
-  centerLabel = 'Total',
-  unit = 'Item',
+  centerLabel = "Total",
+  unit = "Item",
 }) => {
   // Hitung total secara otomatis dari props data
   const totalValue = data.reduce((acc, curr) => acc + curr.value, 0);
@@ -32,7 +39,7 @@ export const DonutChartCard: React.FC<DonutChartCardProps> = ({
         {/* TEXT DI TENGAH DONUT */}
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none pb-6">
           <span className="text-2xl font-bold text-gray-800">
-            {hasData ? totalValue.toLocaleString('id-ID') : 0}
+            {hasData ? totalValue.toLocaleString("id-ID") : 0}
           </span>
           <span className="text-xs text-gray-400 font-medium">
             {centerLabel}
@@ -51,6 +58,10 @@ export const DonutChartCard: React.FC<DonutChartCardProps> = ({
                 paddingAngle={4}
                 dataKey="value"
                 cornerRadius={4}
+                label={({ percent }) =>
+                  Number(percent) > 0 ? `${(Number(percent) * 100).toFixed(0)}%` : ""
+                }
+                labelLine={true}
               >
                 {data.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
@@ -58,17 +69,23 @@ export const DonutChartCard: React.FC<DonutChartCardProps> = ({
               </Pie>
               <Tooltip
                 formatter={(value: any) => [
-                  `${Number(value || 0).toLocaleString('id-ID')} ${unit}`,
-                  'Jumlah',
+                  `${Number(value || 0).toLocaleString("id-ID")} ${unit}`,
+                  "Jumlah",
                 ]}
-                contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '12px' }}
+                contentStyle={{
+                  borderRadius: "8px",
+                  border: "1px solid #e2e8f0",
+                  fontSize: "12px",
+                }}
               />
               <Legend
                 verticalAlign="bottom"
                 height={36}
                 iconType="circle"
                 formatter={(value) => (
-                  <span className="text-xs font-medium text-gray-600">{value}</span>
+                  <span className="text-xs font-medium text-gray-600">
+                    {value}
+                  </span>
                 )}
               />
             </PieChart>
