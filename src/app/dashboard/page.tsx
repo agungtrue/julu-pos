@@ -27,9 +27,14 @@ import {
   Banknote,
   QrCode,
   DollarSignIcon,
+  LayoutDashboard,
 } from "lucide-react";
 import { Toaster } from "sonner";
 import RevenueTrendChart from "@/components/RevenueTrendChart";
+import {
+  DonutChartCard,
+  DonutChartDataItem,
+} from "@/components/DonutChartCard";
 
 export default function DashboardPage() {
   type TimeFilterType =
@@ -43,6 +48,8 @@ export default function DashboardPage() {
     startDate: string;
     endDate: string;
   }
+
+  type DashboardTab = "summary" | "analytics";
 
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
@@ -63,6 +70,7 @@ export default function DashboardPage() {
   });
 
   const [showCustomPicker, setShowCustomPicker] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<DashboardTab>("summary");
 
   const getDateParamsForThisMonth = () => {
     const today = new Date();
@@ -232,6 +240,62 @@ export default function DashboardPage() {
     return diffDays > 0 ? diffDays : 0;
   };
 
+  enum ProductType {
+    COFFEE = "coffee",
+    NON_COFFEE = "non_coffee",
+    SNACKS = "snacks",
+    TOPPING = "topping",
+    RETAIL = "retail",
+    GROCERY = "grocery",
+    FRESH_PRODUCE = "fresh_produce",
+    SERVICE = "service",
+    OTHER = "other",
+  }
+
+  const PRODUCT_TYPE_COLORS: Record<ProductType, string> = {
+    [ProductType.COFFEE]: "#0284c7", // Sky Blue (Brand utama Julu Coffee)
+    [ProductType.NON_COFFEE]: "#0d9488", // Teal
+    [ProductType.SNACKS]: "#f97316", // Orange
+    [ProductType.TOPPING]: "#ec4899", // Pink/Rose
+    [ProductType.RETAIL]: "#8b5cf6", // Purple/Violet
+    [ProductType.GROCERY]: "#f59e0b", // Amber/Yellow
+    [ProductType.FRESH_PRODUCE]: "#10b981", // Emerald Green
+    [ProductType.SERVICE]: "#6366f1", // Indigo
+    [ProductType.OTHER]: "#64748b", // Slate Gray
+  };
+
+  const getProductTypeColor = (type: ProductType | string): string => {
+    const normalizedType = type?.toLowerCase() as ProductType;
+    return (
+      PRODUCT_TYPE_COLORS[normalizedType] ||
+      PRODUCT_TYPE_COLORS[ProductType.OTHER]
+    );
+  };
+
+  const mapingCategoryData =
+    summary?.categorySales?.map((data: any) => {
+      return {
+        name: data.type,
+        value: data.count,
+        color: getProductTypeColor(data.type),
+      };
+    }) || [];
+
+  const categoryData: DonutChartDataItem[] = mapingCategoryData;
+
+  const paymentData: DonutChartDataItem[] = [
+    {
+      name: "QRIS",
+      value: summary?.paymentMethods?.qrisCount || 0,
+      color: "#8b5cf6",
+    },
+    {
+      name: "Tunai",
+      value: summary?.paymentMethods?.cashCount || 0,
+      color: "#22c55e",
+    },
+  ];
+
   //   return <DashboardSkeleton/>
   if (isLoading) return <DashboardSkeleton />;
 
@@ -262,7 +326,7 @@ export default function DashboardPage() {
             <span>Halo, {user?.name}</span>
             <span className="text-gray-300 font-light">|</span>
             <span className="text-teal-700 text-lg font-bold">
-              Ringkasan Performa
+              Ringkasan Performa & Analitik
             </span>
           </h1>
 
@@ -377,586 +441,644 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {user?.role === "OWNER_ADMIN" && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="group relative bg-white border border-slate-200/80 hover:border-[#0F766E]/40 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between overflow-hidden">
-            <div className="absolute -top-10 -right-10 w-28 h-28 bg-[#0F766E]/5 rounded-full blur-2xl group-hover:bg-[#0F766E]/10 transition-colors" />
-
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                  Total Pendapatan
-                </span>
-                <div className="w-8 h-8 rounded-xl bg-teal-50 text-[#0F766E] flex items-center justify-center font-bold">
-                  <TrendingUp className="w-4 h-4" />
-                </div>
-              </div>
-
-              <h3 className="text-2xl font-black text-[#0F766E] tracking-tight">
-                {formatIDR(summary?.revenues)}
-              </h3>
-            </div>
-
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs mt-3">
-              <span className="text-slate-400">
-                Rata-rata:{" "}
-                <strong className="text-slate-700 font-semibold">
-                  {formatIDR(summary?.transactionMetrics.avgRevPerDay)}
-                </strong>
-              </span>
-              <span className="text-slate-400">
-                Target:{" "}
-                <strong className="text-slate-700 font-semibold">
-                  {formatIDR(summary?.breakEvenRevenue.targetAmount)}
-                </strong>
-              </span>
-            </div>
-          </div>
-
-          <div className="bg-white border border-slate-200/80 hover:border-slate-300 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                  Modal Bahan Baku (HPP)
-                </span>
-                {/* Ratio Pill Badge */}
-                <span className="text-[12px] font-bold text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-100">
-                  Rasio: {Math.round(summary?.marginPercentages?.cogsMargin)}%
-                </span>
-              </div>
-
-              <h3 className="text-2xl font-black text-slate-800 tracking-tight">
-                {formatIDR(summary?.totalCogs)}
-              </h3>
-            </div>
-
-            <p className="text-xs text-slate-400 pt-3 border-t border-slate-100 mt-3">
-              Total modal bahan dari menu terjual
-            </p>
-          </div>
-
-          <div className="bg-white border border-slate-200/80 hover:border-slate-300 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                  Keuntungan Kotor
-                </span>
-                <span className="text-[12px] font-bold text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-100">
-                  Rasio: {Math.round(summary?.marginPercentages?.grossMargin)}%
-                </span>
-              </div>
-
-              <h3 className="text-2xl font-black text-slate-800 tracking-tight">
-                {formatIDR(summary?.grossIncomes)}
-              </h3>
-            </div>
-
-            <p className="text-xs text-slate-400 pt-3 border-t border-slate-100 mt-3">
-              Omset dikurangi modal bahan baku
-            </p>
-          </div>
-
-          <div className="bg-white border border-slate-200/80 hover:border-slate-300 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                  Biaya Operasional
-                </span>
-                {/* <span className="text-[12px] font-bold text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-100">
-                  Rasio: {Math.round(summary?.marginPercentages?.grossMargin)}%
-                </span> */}
-                <div
-                  className={`w-8 h-8 rounded-xl flex items-center justify-center bg-rose-100 text-rose-600`}
-                >
-                  <Wallet className="w-4 h-4" />
-                </div>
-              </div>
-
-              <h3 className="text-2xl font-black tracking-tight text-red-500">
-                {formatIDR(summary?.totalOpex)}
-              </h3>
-            </div>
-
-            <p className="text-xs text-slate-400 pt-3 border-t border-slate-100 mt-3">
-              Beban rutin (gaji, listrik, sewa, dll)
-            </p>
-          </div>
-
-          <div className="bg-white border border-slate-200/80 hover:border-slate-300 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                  Bahan Terbuang/Basi (Loss)
-                </span>
-                <span className="text-[10px] font-bold text-red-500 bg-rose-100 px-2.5 py-0.5 rounded-full">
-                  {summary?.lossMutation?.count} {" Catatan"}
-                </span>
-              </div>
-
-              <h3 className="text-2xl font-black tracking-tight text-red-500">
-                {formatIDR(Math.abs(summary?.lossMutation?.totalNominal))}
-              </h3>
-            </div>
-
-            <p className="text-xs text-slate-400 pt-3 border-t border-slate-100 mt-3">
-              Nilai bahan tumpah, basi, atau rusak
-            </p>
-          </div>
-
-          <div
-            className={`group relative bg-white border rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between overflow-hidden ${
-              isProfit
-                ? "border-slate-200/80 hover:border-emerald-300"
-                : "border-rose-200/80 bg-rose-50/20"
+      <div className="flex items-center justify-between">
+        <div className="inline-flex bg-gray-100 p-1 rounded-xl border border-gray-200">
+          <button
+            type="button"
+            onClick={() => setActiveTab("summary")}
+            className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 flex items-center gap-2 ${
+              activeTab === "summary"
+                ? "bg-teal-600 text-white shadow-sm"
+                : "text-gray-500 hover:text-gray-800 hover:bg-gray-200/50"
             }`}
           >
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                  Keuntungan Bersih
-                </span>
-                <div
-                  className={`w-8 h-8 rounded-xl flex items-center justify-center ${
-                    isProfit
-                      ? "bg-emerald-50 text-emerald-600"
-                      : "bg-rose-100 text-rose-600"
-                  }`}
-                >
-                  <DollarSignIcon className="w-4 h-4" />
+            <LayoutDashboard className="w-4 h-4" />
+            <span>Ringkasan Performa</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("analytics")}
+            className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 flex items-center gap-2 ${
+              activeTab === "analytics"
+                ? "bg-teal-600 text-white shadow-sm"
+                : "text-gray-500 hover:text-gray-800 hover:bg-gray-200/50"
+            }`}
+          >
+            <TrendingUp className="w-4 h-4" />
+            <span>Grafik Analitik</span>
+          </button>
+        </div>
+      </div>
+
+      {activeTab === "summary" && (
+        <>
+          {user?.role === "OWNER_ADMIN" && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="group relative bg-white border border-slate-200/80 hover:border-[#0F766E]/40 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between overflow-hidden">
+                <div className="absolute -top-10 -right-10 w-28 h-28 bg-[#0F766E]/5 rounded-full blur-2xl group-hover:bg-[#0F766E]/10 transition-colors" />
+
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      Total Pendapatan
+                    </span>
+                    <div className="w-8 h-8 rounded-xl bg-teal-50 text-[#0F766E] flex items-center justify-center font-bold">
+                      <TrendingUp className="w-4 h-4" />
+                    </div>
+                  </div>
+
+                  <h3 className="text-2xl font-black text-[#0F766E] tracking-tight">
+                    {formatIDR(summary?.revenues)}
+                  </h3>
+                </div>
+
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs mt-3">
+                  <span className="text-slate-400">
+                    Rata-rata:{" "}
+                    <strong className="text-slate-700 font-semibold">
+                      {formatIDR(summary?.transactionMetrics.avgRevPerDay)}
+                    </strong>
+                  </span>
+                  <span className="text-slate-400">
+                    Target:{" "}
+                    <strong className="text-slate-700 font-semibold">
+                      {formatIDR(summary?.breakEvenRevenue.targetAmount)}
+                    </strong>
+                  </span>
                 </div>
               </div>
 
-              <h3
-                className={`text-2xl font-black tracking-tight ${
-                  isProfit ? "text-emerald-600" : "text-rose-600"
+              <div className="bg-white border border-slate-200/80 hover:border-slate-300 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      Modal Bahan Baku (HPP)
+                    </span>
+                    {/* Ratio Pill Badge */}
+                    <span className="text-[12px] font-bold text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-100">
+                      Rasio:{" "}
+                      {Math.round(summary?.marginPercentages?.cogsMargin)}%
+                    </span>
+                  </div>
+
+                  <h3 className="text-2xl font-black text-slate-800 tracking-tight">
+                    {formatIDR(summary?.totalCogs)}
+                  </h3>
+                </div>
+
+                <p className="text-xs text-slate-400 pt-3 border-t border-slate-100 mt-3">
+                  Total modal bahan dari menu terjual
+                </p>
+              </div>
+
+              <div className="bg-white border border-slate-200/80 hover:border-slate-300 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      Keuntungan Kotor
+                    </span>
+                    <span className="text-[12px] font-bold text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-100">
+                      Rasio:{" "}
+                      {Math.round(summary?.marginPercentages?.grossMargin)}%
+                    </span>
+                  </div>
+
+                  <h3 className="text-2xl font-black text-slate-800 tracking-tight">
+                    {formatIDR(summary?.grossIncomes)}
+                  </h3>
+                </div>
+
+                <p className="text-xs text-slate-400 pt-3 border-t border-slate-100 mt-3">
+                  Omset dikurangi modal bahan baku
+                </p>
+              </div>
+
+              <div className="bg-white border border-slate-200/80 hover:border-slate-300 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      Biaya Operasional
+                    </span>
+                    {/* <span className="text-[12px] font-bold text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-100">
+                  Rasio: {Math.round(summary?.marginPercentages?.grossMargin)}%
+                </span> */}
+                    <div
+                      className={`w-8 h-8 rounded-xl flex items-center justify-center bg-rose-100 text-rose-600`}
+                    >
+                      <Wallet className="w-4 h-4" />
+                    </div>
+                  </div>
+
+                  <h3 className="text-2xl font-black tracking-tight text-red-500">
+                    {formatIDR(summary?.totalOpex)}
+                  </h3>
+                </div>
+
+                <p className="text-xs text-slate-400 pt-3 border-t border-slate-100 mt-3">
+                  Beban rutin (gaji, listrik, sewa, dll)
+                </p>
+              </div>
+
+              <div className="bg-white border border-slate-200/80 hover:border-slate-300 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      Bahan Terbuang/Basi (Loss)
+                    </span>
+                    <span className="text-[10px] font-bold text-red-500 bg-rose-100 px-2.5 py-0.5 rounded-full">
+                      {summary?.lossMutation?.count} {" Catatan"}
+                    </span>
+                  </div>
+
+                  <h3 className="text-2xl font-black tracking-tight text-red-500">
+                    {formatIDR(Math.abs(summary?.lossMutation?.totalNominal))}
+                  </h3>
+                </div>
+
+                <p className="text-xs text-slate-400 pt-3 border-t border-slate-100 mt-3">
+                  Nilai bahan tumpah, basi, atau rusak
+                </p>
+              </div>
+
+              <div
+                className={`group relative bg-white border rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between overflow-hidden ${
+                  isProfit
+                    ? "border-slate-200/80 hover:border-emerald-300"
+                    : "border-rose-200/80 bg-rose-50/20"
                 }`}
               >
-                {formatIDR(summary?.netIncomes)}
-              </h3>
-            </div>
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      Keuntungan Bersih
+                    </span>
+                    <div
+                      className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                        isProfit
+                          ? "bg-emerald-50 text-emerald-600"
+                          : "bg-rose-100 text-rose-600"
+                      }`}
+                    >
+                      <DollarSignIcon className="w-4 h-4" />
+                    </div>
+                  </div>
 
-            {summary?.breakEvenRevenue?.excessRevenueAmount < 0 ? (
-              <div className="pt-3 border-t border-slate-100/80 flex items-center justify-between text-xs mt-3">
-                <span className="text-slate-400">Target Profit:</span>
-                <span
-                  className={`inline-flex items-center gap-1 font-semibold px-2 py-0.5 rounded-full text-[12px] ${
-                    isProfit
-                      ? "bg-emerald-50 text-emerald-700"
-                      : "bg-rose-50 text-rose-700"
-                  }`}
-                >
-                  Butuh{" "}
-                  {formatIDR(
-                    Math.abs(
-                      Math.floor(
-                        summary?.breakEvenRevenue?.excessRevenueAmount,
-                      ),
-                    ),
-                  )}{" "}
-                  lagi
-                </span>
+                  <h3
+                    className={`text-2xl font-black tracking-tight ${
+                      isProfit ? "text-emerald-600" : "text-rose-600"
+                    }`}
+                  >
+                    {formatIDR(summary?.netIncomes)}
+                  </h3>
+                </div>
+
+                {summary?.breakEvenRevenue?.excessRevenueAmount < 0 ? (
+                  <div className="pt-3 border-t border-slate-100/80 flex items-center justify-between text-xs mt-3">
+                    <span className="text-slate-400">Target Profit:</span>
+                    <span
+                      className={`inline-flex items-center gap-1 font-semibold px-2 py-0.5 rounded-full text-[12px] ${
+                        isProfit
+                          ? "bg-emerald-50 text-emerald-700"
+                          : "bg-rose-50 text-rose-700"
+                      }`}
+                    >
+                      Butuh{" "}
+                      {formatIDR(
+                        Math.abs(
+                          Math.floor(
+                            summary?.breakEvenRevenue?.excessRevenueAmount,
+                          ),
+                        ),
+                      )}{" "}
+                      lagi
+                    </span>
+                  </div>
+                ) : (
+                  <div className="pt-3 border-t border-slate-100/80 flex items-center justify-between text-xs mt-3">
+                    <span className="text-slate-400">Laba Bersih:</span>
+                    <span
+                      className={`inline-flex items-center gap-1 font-semibold px-2 py-0.5 rounded-full text-[12px] ${
+                        isProfit
+                          ? "bg-emerald-50 text-emerald-700"
+                          : "bg-rose-50 text-rose-700"
+                      }`}
+                    >
+                      {Math.floor(
+                        summary?.breakEvenRevenue?.excessRevenuePercentage,
+                      )}
+                      %
+                    </span>
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className="pt-3 border-t border-slate-100/80 flex items-center justify-between text-xs mt-3">
-                <span className="text-slate-400">Laba Bersih:</span>
-                <span
-                  className={`inline-flex items-center gap-1 font-semibold px-2 py-0.5 rounded-full text-[12px] ${
-                    isProfit
-                      ? "bg-emerald-50 text-emerald-700"
-                      : "bg-rose-50 text-rose-700"
-                  }`}
-                >
-                  {Math.floor(
-                    summary?.breakEvenRevenue?.excessRevenuePercentage,
-                  )}
-                  %
-                </span>
+
+              <div className="group relative bg-white border border-slate-200/80 hover:border-teal-500/30 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between h-40">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      Total Pesanan
+                    </span>
+                    <div className="w-8 h-8 rounded-xl bg-teal-50 text-[#0F766E] flex items-center justify-center font-bold">
+                      <ShoppingBag className="w-4 h-4" />
+                    </div>
+                  </div>
+
+                  <h3 className="text-3xl font-black text-slate-800 tracking-tight">
+                    {summary?.transactions || 0}
+                    <span className="text-sm font-normal text-slate-400 ml-1.5">
+                      transaksi
+                    </span>
+                  </h3>
+                </div>
+
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                  <span className="text-slate-400 font-medium">
+                    Status Transaksi
+                  </span>
+                  <span className="text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full text-[10px]">
+                    Terproses
+                  </span>
+                </div>
               </div>
+
+              <div className="group bg-white border border-slate-200/80 hover:border-teal-500/30 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between h-40">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      Penjualan Item
+                    </span>
+                    <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
+                      <Coffee className="w-4 h-4" />
+                    </div>
+                  </div>
+
+                  <div className="flex items-baseline gap-1">
+                    <h3 className="text-3xl font-black text-slate-800 tracking-tight">
+                      {itemSold}
+                    </h3>
+                    <span className="text-sm font-semibold text-slate-400">
+                      / {targetItem} item
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5 pt-2">
+                  <div className="flex justify-between items-center text-[11px]">
+                    <span className="text-slate-400 font-medium">
+                      Pencapaian Target
+                    </span>
+                    <span className="font-bold text-[#0F766E]">
+                      {itemProgress}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                    <div
+                      className="bg-[#0F766E] h-full rounded-full transition-all duration-500"
+                      style={{ width: `${itemProgress}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white border border-slate-200/80 hover:border-slate-300 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between h-40">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                  Metode Pembayaran
+                </span>
+
+                <div className="grid grid-cols-2 gap-2 mt-1">
+                  <div className="bg-emerald-50/60 border border-emerald-100 rounded-xl p-2.5 flex flex-col justify-between">
+                    <div className="flex items-center gap-1.5 text-emerald-700 text-[10px] font-bold uppercase">
+                      <Banknote className="w-3.5 h-3.5" />
+                      <span>Tunai (Cash)</span>
+                    </div>
+                    <p className="text-sm font-black text-emerald-800 tracking-tight mt-1">
+                      {formatIDR(summary?.paymentMethods?.amounts?.cash)}
+                    </p>
+                  </div>
+
+                  <div className="bg-sky-50/60 border border-sky-100 rounded-xl p-2.5 flex flex-col justify-between">
+                    <div className="flex items-center gap-1.5 text-sky-700 text-[10px] font-bold uppercase">
+                      <QrCode className="w-3.5 h-3.5" />
+                      <span>QRIS</span>
+                    </div>
+                    <p className="text-sm font-black text-sky-800 tracking-tight mt-1">
+                      {formatIDR(summary?.paymentMethods?.amounts?.qris)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* EMPLOYEE */}
+          {user?.role === "EMPLOYEE" && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* CARD 1: REVENUE */}
+              <div className="group relative bg-white border border-slate-200/80 hover:border-[#0F766E]/40 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between overflow-hidden">
+                <div className="absolute -top-10 -right-10 w-28 h-28 bg-[#0F766E]/5 rounded-full blur-2xl group-hover:bg-[#0F766E]/10 transition-colors" />
+
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      Total Pendapatan
+                    </span>
+                    <div className="w-8 h-8 rounded-xl bg-teal-50 text-[#0F766E] flex items-center justify-center font-bold">
+                      <TrendingUp className="w-4 h-4" />
+                    </div>
+                  </div>
+
+                  <h3 className="text-2xl font-black text-[#0F766E] tracking-tight">
+                    {formatIDR(summary?.revenues)}
+                  </h3>
+                </div>
+
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs mt-3">
+                  <span className="text-slate-400">
+                    Rata-rata:{" "}
+                    <strong className="text-slate-700 font-semibold">
+                      {formatIDR(summary?.transactionMetrics.avgRevPerDay)}
+                    </strong>
+                  </span>
+                  <span className="text-slate-400">
+                    Target:{" "}
+                    <strong className="text-slate-700 font-semibold">
+                      {formatIDR(summary?.breakEvenRevenue.targetAmount)}
+                    </strong>
+                  </span>
+                </div>
+              </div>
+
+              <div className="group relative bg-white border border-slate-200/80 hover:border-teal-500/30 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between h-40">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      Total Pesanan
+                    </span>
+                    <div className="w-8 h-8 rounded-xl bg-teal-50 text-[#0F766E] flex items-center justify-center font-bold">
+                      <ShoppingBag className="w-4 h-4" />
+                    </div>
+                  </div>
+
+                  <h3 className="text-3xl font-black text-slate-800 tracking-tight">
+                    {summary?.transactions || 0}
+                    <span className="text-sm font-normal text-slate-400 ml-1.5">
+                      transaksi
+                    </span>
+                  </h3>
+                </div>
+
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                  <span className="text-slate-400 font-medium">
+                    Status Transaksi
+                  </span>
+                  <span className="text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full text-[10px]">
+                    Terproses
+                  </span>
+                </div>
+              </div>
+
+              <div className="group bg-white border border-slate-200/80 hover:border-teal-500/30 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between h-40">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      Penjualan Item
+                    </span>
+                    <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
+                      <Coffee className="w-4 h-4" />
+                    </div>
+                  </div>
+
+                  <div className="flex items-baseline gap-1">
+                    <h3 className="text-3xl font-black text-slate-800 tracking-tight">
+                      {itemSold}
+                    </h3>
+                    <span className="text-sm font-semibold text-slate-400">
+                      / {targetItem} item
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5 pt-2">
+                  <div className="flex justify-between items-center text-[11px]">
+                    <span className="text-slate-400 font-medium">
+                      Pencapaian Target
+                    </span>
+                    <span className="font-bold text-[#0F766E]">
+                      {itemProgress}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                    <div
+                      className="bg-[#0F766E] h-full rounded-full transition-all duration-500"
+                      style={{ width: `${itemProgress}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white border border-slate-200/80 hover:border-slate-300 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between h-40">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                  Metode Pembayaran
+                </span>
+
+                <div className="grid grid-cols-2 gap-2 mt-1">
+                  <div className="bg-emerald-50/60 border border-emerald-100 rounded-xl p-2.5 flex flex-col justify-between">
+                    <div className="flex items-center gap-1.5 text-emerald-700 text-[10px] font-bold uppercase">
+                      <Banknote className="w-3.5 h-3.5" />
+                      <span>Cash</span>
+                    </div>
+                    <p className="text-sm font-black text-emerald-800 tracking-tight mt-1">
+                      {formatIDR(summary?.paymentMethods?.amounts?.cash)}
+                    </p>
+                  </div>
+
+                  <div className="bg-sky-50/60 border border-sky-100 rounded-xl p-2.5 flex flex-col justify-between">
+                    <div className="flex items-center gap-1.5 text-sky-700 text-[10px] font-bold uppercase">
+                      <QrCode className="w-3.5 h-3.5" />
+                      <span>QRIS</span>
+                    </div>
+                    <p className="text-sm font-black text-sky-800 tracking-tight mt-1">
+                      {formatIDR(summary?.paymentMethods?.amounts?.qris)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <ProductSalesSummarySection
+              categorySales={summary?.categorySales}
+              averageBasketSize={
+                summary?.transactionMetrics?.avgTransactionValue
+              }
+              txPerDay={summary?.transactionMetrics?.avgTransactionsPerDay}
+            />
+
+            {user?.role === "OWNER_ADMIN" && (
+              <UserPerformanceSection performances={summary?.performances} />
             )}
-          </div>
 
-          <div className="group relative bg-white border border-slate-200/80 hover:border-teal-500/30 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between h-40">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                  Total Pesanan
-                </span>
-                <div className="w-8 h-8 rounded-xl bg-teal-50 text-[#0F766E] flex items-center justify-center font-bold">
-                  <ShoppingBag className="w-4 h-4" />
-                </div>
-              </div>
+            <div className="lg:col-span-1 bg-white border border-gray-100 p-6 rounded-3xl shadow-sm">
+              <h4 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-6 border-l-4 border-[#EF5B2B] pl-3">
+                Menu Paling Laris (Best Seller)
+              </h4>
 
-              <h3 className="text-3xl font-black text-slate-800 tracking-tight">
-                {summary?.transactions || 0}
-                <span className="text-sm font-normal text-slate-400 ml-1.5">
-                  transaksi
-                </span>
-              </h3>
-            </div>
-
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-              <span className="text-slate-400 font-medium">
-                Status Transaksi
-              </span>
-              <span className="text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full text-[10px]">
-                Terproses
-              </span>
-            </div>
-          </div>
-
-          <div className="group bg-white border border-slate-200/80 hover:border-teal-500/30 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between h-40">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                  Penjualan Item
-                </span>
-                <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
-                  <Coffee className="w-4 h-4" />
-                </div>
-              </div>
-
-              <div className="flex items-baseline gap-1">
-                <h3 className="text-3xl font-black text-slate-800 tracking-tight">
-                  {itemSold}
-                </h3>
-                <span className="text-sm font-semibold text-slate-400">
-                  / {targetItem} item
-                </span>
-              </div>
-            </div>
-
-            <div className="space-y-1.5 pt-2">
-              <div className="flex justify-between items-center text-[11px]">
-                <span className="text-slate-400 font-medium">
-                  Pencapaian Target
-                </span>
-                <span className="font-bold text-[#0F766E]">
-                  {itemProgress}%
-                </span>
-              </div>
-              <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                <div
-                  className="bg-[#0F766E] h-full rounded-full transition-all duration-500"
-                  style={{ width: `${itemProgress}%` }}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white border border-slate-200/80 hover:border-slate-300 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between h-40">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-              Metode Pembayaran
-            </span>
-
-            <div className="grid grid-cols-2 gap-2 mt-1">
-              <div className="bg-emerald-50/60 border border-emerald-100 rounded-xl p-2.5 flex flex-col justify-between">
-                <div className="flex items-center gap-1.5 text-emerald-700 text-[10px] font-bold uppercase">
-                  <Banknote className="w-3.5 h-3.5" />
-                  <span>Tunai (Cash)</span>
-                </div>
-                <p className="text-sm font-black text-emerald-800 tracking-tight mt-1">
-                  {formatIDR(summary?.paymentMethods?.amounts?.cash)}
-                </p>
-              </div>
-
-              <div className="bg-sky-50/60 border border-sky-100 rounded-xl p-2.5 flex flex-col justify-between">
-                <div className="flex items-center gap-1.5 text-sky-700 text-[10px] font-bold uppercase">
-                  <QrCode className="w-3.5 h-3.5" />
-                  <span>QRIS</span>
-                </div>
-                <p className="text-sm font-black text-sky-800 tracking-tight mt-1">
-                  {formatIDR(summary?.paymentMethods?.amounts?.qris)}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* EMPLOYEE */}
-      {user?.role === "EMPLOYEE" && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* CARD 1: REVENUE */}
-          <div className="group relative bg-white border border-slate-200/80 hover:border-[#0F766E]/40 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between overflow-hidden">
-            <div className="absolute -top-10 -right-10 w-28 h-28 bg-[#0F766E]/5 rounded-full blur-2xl group-hover:bg-[#0F766E]/10 transition-colors" />
-
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                  Total Pendapatan
-                </span>
-                <div className="w-8 h-8 rounded-xl bg-teal-50 text-[#0F766E] flex items-center justify-center font-bold">
-                  <TrendingUp className="w-4 h-4" />
-                </div>
-              </div>
-
-              <h3 className="text-2xl font-black text-[#0F766E] tracking-tight">
-                {formatIDR(summary?.revenues)}
-              </h3>
-            </div>
-
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs mt-3">
-              <span className="text-slate-400">
-                Rata-rata:{" "}
-                <strong className="text-slate-700 font-semibold">
-                  {formatIDR(summary?.transactionMetrics.avgRevPerDay)}
-                </strong>
-              </span>
-              <span className="text-slate-400">
-                Target:{" "}
-                <strong className="text-slate-700 font-semibold">
-                  {formatIDR(summary?.breakEvenRevenue.targetAmount)}
-                </strong>
-              </span>
-            </div>
-          </div>
-
-          <div className="group relative bg-white border border-slate-200/80 hover:border-teal-500/30 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between h-40">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                  Total Pesanan
-                </span>
-                <div className="w-8 h-8 rounded-xl bg-teal-50 text-[#0F766E] flex items-center justify-center font-bold">
-                  <ShoppingBag className="w-4 h-4" />
-                </div>
-              </div>
-
-              <h3 className="text-3xl font-black text-slate-800 tracking-tight">
-                {summary?.transactions || 0}
-                <span className="text-sm font-normal text-slate-400 ml-1.5">
-                  transaksi
-                </span>
-              </h3>
-            </div>
-
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-              <span className="text-slate-400 font-medium">
-                Status Transaksi
-              </span>
-              <span className="text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full text-[10px]">
-                Terproses
-              </span>
-            </div>
-          </div>
-
-          <div className="group bg-white border border-slate-200/80 hover:border-teal-500/30 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between h-40">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                  Penjualan Item
-                </span>
-                <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
-                  <Coffee className="w-4 h-4" />
-                </div>
-              </div>
-
-              <div className="flex items-baseline gap-1">
-                <h3 className="text-3xl font-black text-slate-800 tracking-tight">
-                  {itemSold}
-                </h3>
-                <span className="text-sm font-semibold text-slate-400">
-                  / {targetItem} item
-                </span>
-              </div>
-            </div>
-
-            <div className="space-y-1.5 pt-2">
-              <div className="flex justify-between items-center text-[11px]">
-                <span className="text-slate-400 font-medium">
-                  Pencapaian Target
-                </span>
-                <span className="font-bold text-[#0F766E]">
-                  {itemProgress}%
-                </span>
-              </div>
-              <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                <div
-                  className="bg-[#0F766E] h-full rounded-full transition-all duration-500"
-                  style={{ width: `${itemProgress}%` }}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white border border-slate-200/80 hover:border-slate-300 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between h-40">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-              Metode Pembayaran
-            </span>
-
-            <div className="grid grid-cols-2 gap-2 mt-1">
-              <div className="bg-emerald-50/60 border border-emerald-100 rounded-xl p-2.5 flex flex-col justify-between">
-                <div className="flex items-center gap-1.5 text-emerald-700 text-[10px] font-bold uppercase">
-                  <Banknote className="w-3.5 h-3.5" />
-                  <span>Cash</span>
-                </div>
-                <p className="text-sm font-black text-emerald-800 tracking-tight mt-1">
-                  {formatIDR(summary?.paymentMethods?.amounts?.cash)}
-                </p>
-              </div>
-
-              <div className="bg-sky-50/60 border border-sky-100 rounded-xl p-2.5 flex flex-col justify-between">
-                <div className="flex items-center gap-1.5 text-sky-700 text-[10px] font-bold uppercase">
-                  <QrCode className="w-3.5 h-3.5" />
-                  <span>QRIS</span>
-                </div>
-                <p className="text-sm font-black text-sky-800 tracking-tight mt-1">
-                  {formatIDR(summary?.paymentMethods?.amounts?.qris)}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <ProductSalesSummarySection
-          categorySales={summary?.categorySales}
-          averageBasketSize={summary?.transactionMetrics?.avgTransactionValue}
-          txPerDay={summary?.transactionMetrics?.avgTransactionsPerDay}
-        />
-
-        {user?.role === "OWNER_ADMIN" && (
-          <UserPerformanceSection performances={summary?.performances} />
-        )}
-
-        <div className="lg:col-span-1 bg-white border border-gray-100 p-6 rounded-3xl shadow-sm">
-          <h4 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-6 border-l-4 border-[#EF5B2B] pl-3">
-            Menu Paling Laris (Best Seller)
-          </h4>
-
-          <div
-            className="h-65 overflow-y-auto pr-2 space-y-4
+              <div
+                className="h-65 overflow-y-auto pr-2 space-y-4
             [&::-webkit-scrollbar]:w-1.5
             [&::-webkit-scrollbar-track]:bg-transparent
             [&::-webkit-scrollbar-thumb]:bg-gray-200
             [&::-webkit-scrollbar-thumb]:rounded-full
             hover:[&::-webkit-scrollbar-thumb]:bg-gray-300"
-          >
-            {/* @ts-ignore */}
-            {summary?.bestSellers?.map((item, index) => (
-              <div key={item.name} className="space-y-1.5">
-                <div className="flex justify-between items-center text-xs md:text-sm">
-                  <div className="flex items-center gap-3">
-                    <span className="w-5 h-5 rounded-md bg-gray-100 text-gray-500 font-bold text-xs flex items-center justify-center font-mono">
-                      {index + 1}
-                    </span>
-                    <span className="font-semibold text-gray-700">
-                      {item.name}
-                    </span>
-                  </div>
-                  <span className="font-bold text-gray-800 font-mono">
-                    {item.count} Porsi ({Math.ceil(item.percentage)}%)
-                  </span>
-                </div>
-                <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all duration-500 ${
-                      index === 0
-                        ? "bg-[#0F766E]"
-                        : index === 1
-                          ? "bg-[#EF5B2B]"
-                          : "bg-amber-500"
-                    }`}
-                    style={{ width: `${(item.count / 75) * 100}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-            {summary?.bestSellers?.length === 0 && (
-              <div className="text-center py-6 text-xs text-gray-400 font-medium">
-                Tidak ada transaksi hari ini.
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {user?.role === "OWNER_ADMIN" && (
-        <>
-          <div
-            onClick={() => {
-              if (summary?.stockAlerts?.length > 0) {
-                setIsLowStockModalOpen(true);
-              }
-            }}
-            className={`bg-white border rounded-2xl p-5 shadow-sm transition-all flex items-center justify-between group ${
-              summary?.stockAlerts?.length > 0
-                ? "border-amber-200 bg-amber-50/20 hover:border-amber-300 cursor-pointer"
-                : "border-gray-100"
-            }`}
-          >
-            <div className="flex items-center gap-4">
-              {/* Icon Container */}
-              <div
-                className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 ${
-                  summary?.stockAlerts?.length > 0
-                    ? "bg-amber-500 text-white shadow-md shadow-amber-500/20"
-                    : "bg-[#0A8F8A]/10 text-[#0A8F8A]"
-                }`}
               >
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-                  />
-                </svg>
-              </div>
-
-              <div>
-                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-0.5">
-                  Stok Kritis
-                </span>
-                <div className="flex items-baseline gap-2">
-                  <span
-                    className={`text-2xl font-extrabold tracking-tight ${
-                      summary?.stockAlerts?.length > 0
-                        ? "text-amber-600"
-                        : "text-gray-900"
-                    }`}
-                  >
-                    {summary?.stockAlerts?.length || 0}
-                  </span>
-                  <span className="text-xs font-semibold text-gray-500">
-                    Bahan
-                  </span>
-                </div>
+                {/* @ts-ignore */}
+                {summary?.bestSellers?.map((item, index) => (
+                  <div key={item.name} className="space-y-1.5">
+                    <div className="flex justify-between items-center text-xs md:text-sm">
+                      <div className="flex items-center gap-3">
+                        <span className="w-5 h-5 rounded-md bg-gray-100 text-gray-500 font-bold text-xs flex items-center justify-center font-mono">
+                          {index + 1}
+                        </span>
+                        <span className="font-semibold text-gray-700">
+                          {item.name}
+                        </span>
+                      </div>
+                      <span className="font-bold text-gray-800 font-mono">
+                        {item.count} Porsi ({Math.ceil(item.percentage)}%)
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${
+                          index === 0
+                            ? "bg-[#0F766E]"
+                            : index === 1
+                              ? "bg-[#EF5B2B]"
+                              : "bg-amber-500"
+                        }`}
+                        style={{ width: `${(item.count / 75) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+                {summary?.bestSellers?.length === 0 && (
+                  <div className="text-center py-6 text-xs text-gray-400 font-medium">
+                    Tidak ada transaksi hari ini.
+                  </div>
+                )}
               </div>
             </div>
-
-            {summary?.stockAlerts?.length > 0 ? (
-              <div className="flex items-center gap-1 text-xs font-bold text-amber-600 bg-amber-100/60 px-3 py-1.5 rounded-xl group-hover:bg-amber-600 group-hover:text-white transition-all">
-                <span>Lihat Detail</span>
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
-              </div>
-            ) : (
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#0A8F8A] bg-[#0A8F8A]/10 px-2.5 py-1 rounded-full">
-                Aman
-              </span>
-            )}
           </div>
-          <RevenueTrendChart data={orderTrendData} />
+
+          {user?.role === "OWNER_ADMIN" && (
+            <div
+              onClick={() => {
+                if (summary?.stockAlerts?.length > 0) {
+                  setIsLowStockModalOpen(true);
+                }
+              }}
+              className={`bg-white border rounded-2xl p-5 shadow-sm transition-all flex items-center justify-between group ${
+                summary?.stockAlerts?.length > 0
+                  ? "border-amber-200 bg-amber-50/20 hover:border-amber-300 cursor-pointer"
+                  : "border-gray-100"
+              }`}
+            >
+              <div className="flex items-center gap-4">
+                {/* Icon Container */}
+                <div
+                  className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 ${
+                    summary?.stockAlerts?.length > 0
+                      ? "bg-amber-500 text-white shadow-md shadow-amber-500/20"
+                      : "bg-[#0A8F8A]/10 text-[#0A8F8A]"
+                  }`}
+                >
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                    />
+                  </svg>
+                </div>
+
+                <div>
+                  <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-0.5">
+                    Stok Kritis
+                  </span>
+                  <div className="flex items-baseline gap-2">
+                    <span
+                      className={`text-2xl font-extrabold tracking-tight ${
+                        summary?.stockAlerts?.length > 0
+                          ? "text-amber-600"
+                          : "text-gray-900"
+                      }`}
+                    >
+                      {summary?.stockAlerts?.length || 0}
+                    </span>
+                    <span className="text-xs font-semibold text-gray-500">
+                      Bahan
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {summary?.stockAlerts?.length > 0 ? (
+                <div className="flex items-center gap-1 text-xs font-bold text-amber-600 bg-amber-100/60 px-3 py-1.5 rounded-xl group-hover:bg-amber-600 group-hover:text-white transition-all">
+                  <span>Lihat Detail</span>
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                </div>
+              ) : (
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#0A8F8A] bg-[#0A8F8A]/10 px-2.5 py-1 rounded-full">
+                  Aman
+                </span>
+              )}
+            </div>
+          )}
+        </>
+      )}
+
+      {activeTab === "analytics" && (
+        <>
+          {user?.role === "OWNER_ADMIN" && (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <DonutChartCard
+                  title="Produk Terjual"
+                  data={categoryData}
+                  centerLabel="Total Item"
+                  unit="Cup/Porsi"
+                />
+
+                <DonutChartCard
+                  title="Metode Pembayaran"
+                  data={paymentData}
+                  centerLabel="Transaksi"
+                  unit="Tx"
+                />
+              </div>
+              <RevenueTrendChart data={orderTrendData} />
+            </>
+          )}
         </>
       )}
 
