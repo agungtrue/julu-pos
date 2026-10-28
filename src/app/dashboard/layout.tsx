@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { removeAuthCookie } from '@/app/actions/auth';
 import { useAuthStore } from '@/stores/authStore';
-import { Home, CircleDollarSign, Book, ArrowLeftRight, Calculator, Users, UserCheck2, Coffee, FileText, LogOut, ArrowBigDownIcon } from 'lucide-react';
+import { Home, CircleDollarSign, Book, ArrowLeftRight, Calculator, Users, UserCheck2, Coffee, FileText, LogOut, ArrowBigDownIcon, Cog } from 'lucide-react';
 
 export default function DashboardLayout({
   children,
@@ -32,6 +32,7 @@ export default function DashboardLayout({
     { name: 'Resep & Bahan Baku', path: '/dashboard/cogs', roles: ['OWNER_ADMIN'], icon: Calculator },
     { name: 'Katalog Menu', path: '/dashboard/products', roles: ['OWNER_ADMIN'], icon: Coffee },
     { name: 'Riwayat & Tambah Stok', path: '/dashboard/stock-mutation', roles: ['OWNER_ADMIN'], icon: FileText },
+    { name: 'Pengaturan', path: '/dashboard/settings', roles: ['OWNER_ADMIN'], icon: Cog },
   ].filter(data => userRoles && data.roles.includes(userRoles));
 
   const handleLogout = () => {
