@@ -68,6 +68,14 @@ export const endpoints = {
     post: `${BASE_URL}/tenants`,
     patch: (id: string) => `${BASE_URL}/tenants/${id}`,
     status: (id: string) => `${BASE_URL}/tenants/${id}/status`,
+    settings: {
+      get: `${BASE_URL}/tenants/settings`,
+      post: `${BASE_URL}/tenants/settings`,
+    },
+    storeStatus: {
+      get: (date: string) => `${BASE_URL}/tenants/special-days?${date}`,
+      post: `${BASE_URL}/tenants/special-days`,
+    }
   },
   opex: {
     get: `${BASE_URL}/opex`,

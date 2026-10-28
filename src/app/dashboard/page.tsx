@@ -29,12 +29,13 @@ import {
   DollarSignIcon,
   LayoutDashboard,
 } from "lucide-react";
-import { Toaster } from "sonner";
+import { Toaster, toast } from "sonner";
 import RevenueTrendChart from "@/components/RevenueTrendChart";
 import {
   DonutChartCard,
   DonutChartDataItem,
 } from "@/components/DonutChartCard";
+import StoreStatusControl from "@/components/StoreStatusControl";
 
 export default function DashboardPage() {
   type TimeFilterType =
@@ -441,12 +442,12 @@ export default function DashboardPage() {
         )}
       </div>
 
-      <div className="flex items-center justify-between">
-        <div className="inline-flex bg-gray-100 p-1 rounded-xl border border-gray-200">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 w-full">
+        <div className="inline-flex bg-gray-100 p-1 rounded-xl border border-gray-200 w-full sm:w-auto">
           <button
             type="button"
             onClick={() => setActiveTab("summary")}
-            className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 flex items-center gap-2 ${
+            className={`flex-1 sm:flex-initial justify-center px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 flex items-center gap-2 ${
               activeTab === "summary"
                 ? "bg-teal-600 text-white shadow-sm"
                 : "text-gray-500 hover:text-gray-800 hover:bg-gray-200/50"
@@ -459,7 +460,7 @@ export default function DashboardPage() {
           <button
             type="button"
             onClick={() => setActiveTab("analytics")}
-            className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 flex items-center gap-2 ${
+            className={`flex-1 sm:flex-initial justify-center px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 flex items-center gap-2 ${
               activeTab === "analytics"
                 ? "bg-teal-600 text-white shadow-sm"
                 : "text-gray-500 hover:text-gray-800 hover:bg-gray-200/50"
@@ -468,6 +469,24 @@ export default function DashboardPage() {
             <TrendingUp className="w-4 h-4" />
             <span>Grafik Analitik</span>
           </button>
+        </div>
+        <div className="w-full sm:w-auto">
+          {timeFilter === "today" && (
+            <StoreStatusControl
+              initialIsOpen={true}
+              onStatusChange={async (isOpen, reason) => {
+                console.log({ isOpen, reason });
+                toast.success("Data Tersimpan!", {
+                  description: "Hari Operasional berhasil di perbarui!",
+                  className:
+                    "bg-emerald-50 border-emerald-200 text-emerald-800 rounded-xl",
+                });
+                setTimeout(() => {
+                  window.location.href = "/dashboard";
+                }, 1000);
+              }}
+            />
+          )}
         </div>
       </div>
 
